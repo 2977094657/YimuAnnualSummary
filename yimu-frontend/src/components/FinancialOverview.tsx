@@ -192,7 +192,7 @@ const FinancialOverview: React.FC = () => {
     {
       title: '今年一共赚了',
       value: formatCurrency(financialData.annual_total_income),
-      icon: '💰',
+      icon: <img src="/SavedStickers/💰_AgADClAAAmeMcEs.webp" alt="💰" className="w-6 h-6" />,
       bgColor: 'from-green-100 to-emerald-200',
       borderColor: 'border-green-300',
       description: '辛苦一年的收获'
@@ -200,7 +200,7 @@ const FinancialOverview: React.FC = () => {
     {
       title: '今年一共花了',
       value: formatCurrency(financialData.annual_total_expense),
-      icon: '💸',
+      icon: <img src="/SavedStickers/💰_AgADClAAAmeMcEs.webp" alt="💸" className="w-6 h-6" />,
       bgColor: 'from-red-100 to-rose-200',
       borderColor: 'border-red-300',
       description: '生活的必要开销'
@@ -208,7 +208,7 @@ const FinancialOverview: React.FC = () => {
     {
       title: '今年存下了',
       value: formatCurrency(financialData.annual_net_savings),
-      icon: '🏦',
+      icon: <img src="/SavedStickers/🏠_AgADeVUAAhYwcEo.webp" alt="🏦" className="w-6 h-6" />,
       bgColor: financialData.annual_net_savings >= 0 ? 'from-blue-100 to-sky-200' : 'from-orange-100 to-amber-200',
       borderColor: financialData.annual_net_savings >= 0 ? 'border-blue-300' : 'border-orange-300',
       description: financialData.annual_net_savings >= 0 ? '为未来积累的财富' : '需要调整的地方'
@@ -530,7 +530,7 @@ const FinancialOverview: React.FC = () => {
           }}
         >
           
-          <h3 className="text-lg font-semibold text-gray-700 mb-3">💝 今年的财务小结</h3>
+          <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center"><img src="/SavedStickers/💖_AgADlVUAAltsiEg.webp" alt="💝" className="w-8 h-8 mr-2" /> 今年的财务小结</h3>
           <div className="space-y-1">
             {insights.map((insight, index) => (
               <div key={index} className="relative">
@@ -840,7 +840,7 @@ const FinancialOverview: React.FC = () => {
            }}
          >
            
-           <h4 className="text-lg font-semibold text-gray-700 mb-6 text-center">🔥 {selectedYear}年度财务热力图</h4>
+           <h4 className="text-lg font-semibold text-gray-700 mb-6 text-center flex items-center justify-center"><img src="/SavedStickers/🔥_AgADg0wAAi7eSUs.webp" alt="🔥" className="w-6 h-6 mr-2" /> {selectedYear}年度财务热力图</h4>
            
            {/* 月份标签 - 与热力图列对应 */}
            <div className="flex mb-2" style={{ marginLeft: '24px' }}>
@@ -1062,12 +1062,12 @@ const FinancialOverview: React.FC = () => {
              <div className="mt-2 text-[10px] relative">
                <div 
                  dangerouslySetInnerHTML={{
-                   __html: `<span style="background: linear-gradient(45deg, transparent 40%, #fbbf2477 50%, transparent 60%); font-weight: bold; padding: 2px 4px; position: relative; border-radius: 2px; color: #7c3aed;"><span style="text-shadow: 1px 1px 0px #fbbf24; filter: brightness(1.1);">💡 发光边框的格子代表高金额交易(>1000元)，带有炫酷流动渐变效果</span></span>`
+                   __html: `<span style="background: linear-gradient(45deg, transparent 40%, #fbbf2477 50%, transparent 60%); font-weight: bold; padding: 2px 4px; position: relative; border-radius: 2px; color: #7c3aed;"><span style="text-shadow: 1px 1px 0px #fbbf24; filter: brightness(1.1);"><img src="/SavedStickers/💡_AgAD00wAAovVUEo.webp" alt="💡" style="width: 12px; height: 12px; display: inline-block; margin-right: 2px; vertical-align: middle;" /> 发光边框的格子代表高金额交易(>1000元)，带有炫酷流动渐变效果</span></span>`
                  }}
                />
                {/* 装饰性小星星 */}
-               <span className="absolute -top-1 -right-2 text-yellow-400 text-xs animate-pulse">✨</span>
-               <span className="absolute -bottom-1 -left-1 text-pink-400 text-xs animate-bounce">💫</span>
+               <img src="/SavedStickers/✨_AgAD10YAAmyJkUs.webp" alt="✨" className="absolute -top-1 -right-2 w-4 h-4 animate-pulse" />
+               <img src="/SavedStickers/⭐_AgADrUUAAt3FKEs.webp" alt="💫" className="absolute -bottom-1 -left-1 w-4 h-4 animate-bounce" />
              </div>
            </div>
          </div>
@@ -1098,9 +1098,9 @@ const FinancialOverview: React.FC = () => {
          initial={{ opacity: 0 }}
          animate={{ opacity: 0.6 }}
          transition={{ duration: 1, delay: 4 }}
-         className="absolute top-40 left-20 text-2xl text-blue-300 transform -rotate-12 z-10"
+         className="absolute top-40 left-20 transform -rotate-12 z-10"
        >
-         ✨
+         <img src="/SavedStickers/✨_AgAD10YAAmyJkUs.webp" alt="✨" className="w-6 h-6" />
        </motion.div>
        
        <motion.div

@@ -209,12 +209,42 @@ const AnnualSummary: React.FC = () => {
             `
           }}
         >
-          <span className="text-[8rem] font-bold text-gray-700 leading-none select-none"
-            style={{ 
-              textShadow: '2px 2px 4px rgba(0,0,0,0.1)'
-            }}>
-            2024
-          </span>
+          <svg width="400" height="200" className="select-none" style={{ filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.1))' }}>
+            <defs>
+              <linearGradient id="flowingGradient" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="objectBoundingBox">
+                <stop offset="0%" stopColor="#fbbf24">
+                   <animate attributeName="stop-color"
+                     values="#fbbf24;#f59e0b;#10b981;#84cc16;#fbbf24"
+                     dur="8s"
+                     repeatCount="indefinite" />
+                 </stop>
+                 <stop offset="33%" stopColor="#f59e0b">
+                   <animate attributeName="stop-color"
+                     values="#f59e0b;#10b981;#84cc16;#fbbf24;#f59e0b"
+                     dur="8s"
+                     repeatCount="indefinite" />
+                 </stop>
+                 <stop offset="66%" stopColor="#10b981">
+                   <animate attributeName="stop-color"
+                     values="#10b981;#84cc16;#fbbf24;#f59e0b;#10b981"
+                     dur="8s"
+                     repeatCount="indefinite" />
+                 </stop>
+                 <stop offset="100%" stopColor="#84cc16">
+                   <animate attributeName="stop-color"
+                     values="#84cc16;#fbbf24;#f59e0b;#10b981;#84cc16"
+                     dur="8s"
+                     repeatCount="indefinite" />
+                 </stop>
+              </linearGradient>
+            </defs>
+            <text x="50%" y="70%" textAnchor="middle" dominantBaseline="middle"
+                  className="text-[8rem] font-bold leading-none"
+                  fill="url(#flowingGradient)"
+                  style={{ fontSize: '8rem', fontWeight: 'bold' }}>
+              2024
+            </text>
+          </svg>
           
           {/* 报纸剪贴效果的边缘装饰 */}
           <div className="absolute -top-2 -left-2 w-8 h-8 bg-yellow-200 opacity-60 transform rotate-45"></div>
@@ -328,7 +358,7 @@ const AnnualSummary: React.FC = () => {
            }}
          >
            <p className="text-base text-gray-700 leading-relaxed">
-             又是小小的冲动消费📝<br/>
+             又是小小的冲动消费<img src="/SavedStickers/✏_AgADSUcAAqiycUo.webp" alt="📝" className="w-4 h-4 inline-block ml-1" /><br/>
              计划总是赶不上变化<br/>
              明天要更理性一些！<br/>
              <span className="text-xs text-gray-500">理财路上的小插曲</span>
@@ -385,7 +415,7 @@ const AnnualSummary: React.FC = () => {
            }}
          >
            <p className="text-base text-gray-700 leading-relaxed">
-             收入到账啦🎉<br/>
+             收入到账啦<img src="/SavedStickers/🥳_AgADoEcAAr8SkEs.webp" alt="🎉" className="w-4 h-4 inline-block ml-1" /><br/>
              终于有了盈余<br/>
              这个月收支平衡！<br/>
              <span className="text-xs text-gray-500">财务状况在好转</span>
@@ -442,7 +472,7 @@ const AnnualSummary: React.FC = () => {
            }}
          >
            <p className="text-base text-gray-700 leading-relaxed">
-             理财小目标💰<br/>
+             理财小目标<img src="/SavedStickers/💰_AgADClAAAmeMcEs.webp" alt="💰" className="w-4 h-4 inline-block ml-1" /><br/>
              这个月要控制支出<br/>
              培养好习惯！<br/>
              <span className="text-xs text-gray-500">目标：支出优化20%</span>
@@ -500,8 +530,8 @@ const AnnualSummary: React.FC = () => {
            }}
          >
            <p className="text-base text-gray-700 leading-relaxed">
-             记账让我发现💡<br/>
-             钱都花在哪里了💸<br/>
+             记账让我发现<img src="/SavedStickers/💡_AgAD00wAAovVUEo.webp" alt="💡" className="w-4 h-4 inline-block mr-1" /><br/>
+             钱都花在哪里了<img src="/SavedStickers/💰_AgADClAAAmeMcEs.webp" alt="💸" className="w-4 h-4 inline-block ml-1" /><br/>
              支出分布很有趣！<br/>
              <span className="text-xs text-gray-500">数据分析的意外收获</span>
            </p>
@@ -557,7 +587,7 @@ const AnnualSummary: React.FC = () => {
            }}
          >
            <p className="text-base text-gray-700 leading-relaxed">
-             开始学习理财📈<br/>
+             开始学习理财<img src="/SavedStickers/⬆_AgADjkoAAnEqcEs.webp" alt="📈" className="w-4 h-4 inline-block ml-1" /><br/>
              每一分钱都有意义<br/>
              这是个好开始！<br/>
              <span className="text-xs text-gray-500">财富自由的第一步</span>
@@ -605,15 +635,14 @@ const AnnualSummary: React.FC = () => {
          onAnimationComplete={() => console.log('左下角贴纸渲染完成')}
        >
          <img 
-           src="/stickers/厚涂风格信用卡.png" 
-           alt="信用卡贴纸"
+           src="/SavedStickers/🥳_AgADoEcAAr8SkEs.webp" 
+           alt="庆祝贴纸"
            className="w-40 h-40 object-contain"
            onLoad={(e) => {
              const img = e.target as HTMLImageElement;
              console.log('左下角贴纸加载完成:', img.naturalWidth, 'x', img.naturalHeight);
            }}
            style={{
-             filter: 'drop-shadow(3px 4px 8px rgba(0,0,0,0.15))',
              transform: 'rotate(-10deg)',
              maxWidth: '160px',
              maxHeight: '160px'
@@ -630,15 +659,14 @@ const AnnualSummary: React.FC = () => {
          onAnimationComplete={() => console.log('上方贴纸渲染完成')}
        >
          <img 
-           src="/stickers/手绘风格钱包.png" 
-           alt="钱包贴纸"
+           src="/SavedStickers/👍_AgADsk0AAtLogUg.webp" 
+           alt="点赞贴纸"
            className="w-40 h-40 object-contain"
            onLoad={(e) => {
              const img = e.target as HTMLImageElement;
              console.log('上方贴纸加载完成:', img.naturalWidth, 'x', img.naturalHeight);
            }}
            style={{
-             filter: 'drop-shadow(3px 4px 8px rgba(0,0,0,0.15))',
              transform: 'rotate(15deg)',
              maxWidth: '160px',
              maxHeight: '160px'
@@ -655,15 +683,14 @@ const AnnualSummary: React.FC = () => {
          onAnimationComplete={() => console.log('右边贴纸渲染完成')}
        >
          <img 
-           src="/stickers/蜡笔风格存钱罐.png" 
-           alt="存钱罐贴纸"
+           src="/SavedStickers/⭐_AgADrUUAAt3FKEs.webp" 
+           alt="星星贴纸"
            className="w-40 h-40 object-contain"
            onLoad={(e) => {
              const img = e.target as HTMLImageElement;
              console.log('右边贴纸加载完成:', img.naturalWidth, 'x', img.naturalHeight);
            }}
            style={{
-             filter: 'drop-shadow(3px 4px 8px rgba(0,0,0,0.15))',
              transform: 'rotate(20deg)',
              maxWidth: '160px',
              maxHeight: '160px'
