@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FinancialOverview from './FinancialOverview';
+import toast, { Toaster } from 'react-hot-toast';
 
 // 移除不再需要的接口定义和常量
 
@@ -40,6 +41,70 @@ const AnnualSummary: React.FC = () => {
     const savedPage = sessionStorage.getItem('yimu-current-page');
     return savedPage ? parseInt(savedPage, 10) : 0;
   });
+
+  // 年份状态管理 - 添加年份相关状态
+  const [selectedYear, setSelectedYear] = useState<number>(() => {
+    const savedYear = sessionStorage.getItem('yimu-selected-year');
+    return savedYear ? parseInt(savedYear, 10) : new Date().getFullYear() - 1;
+  });
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // 用于区分初始加载和年份切换
+
+  // 获取可用年份列表
+  const fetchAvailableYears = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/available-years');
+      if (!response.ok) {
+        throw new Error('Failed to fetch available years');
+      }
+      const data = await response.json();
+      setAvailableYears(data.years || []);
+
+      // 如果当前选择的年份不在可用年份中，选择最新的年份
+      if (data.years && data.years.length > 0 && !data.years.includes(selectedYear)) {
+        const latestYear = data.years[0];
+        setSelectedYear(latestYear);
+        sessionStorage.setItem('yimu-selected-year', latestYear.toString());
+      }
+    } catch (err) {
+      console.error('获取可用年份失败:', err);
+      toast.error('获取可用年份失败，使用默认年份', { id: 'fetch-years-error' });
+      // 使用默认年份范围作为后备
+      const currentYear = new Date().getFullYear();
+      const defaultYears = [];
+      for (let i = currentYear; i >= currentYear - 5; i--) {
+        defaultYears.push(i);
+      }
+      setAvailableYears(defaultYears);
+    }
+  };
+
+  // 初始化：获取可用年份
+  useEffect(() => {
+    fetchAvailableYears();
+  }, []);
+
+  // 保存年份到sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('yimu-selected-year', selectedYear.toString());
+  }, [selectedYear]);
+
+  // 年份变化时标记非初始加载
+  useEffect(() => {
+    if (availableYears.length > 0 && !isInitialLoad) {
+      // 不是初始加载，可能是年份切换
+    }
+  }, [selectedYear, availableYears, isInitialLoad]);
+
+  // 初始化完成后标记
+  useEffect(() => {
+    if (availableYears.length > 0) {
+      const timer = setTimeout(() => {
+        setIsInitialLoad(false);
+      }, 2000); // 2秒后认为初始加载完成
+      return () => clearTimeout(timer);
+    }
+  }, [availableYears]);
   
   // 页面列表
   const pages = ['welcome', 'financial-overview'];
@@ -57,9 +122,10 @@ const AnnualSummary: React.FC = () => {
     }
   };
 
-  // 键盘上下键切换页面
+  // 键盘事件处理
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 上下键切换页面
       if (e.key === 'ArrowDown' && currentPage < pages.length - 1) {
         const newPage = currentPage + 1;
         setCurrentPage(newPage);
@@ -69,11 +135,34 @@ const AnnualSummary: React.FC = () => {
         setCurrentPage(newPage);
         sessionStorage.setItem('yimu-current-page', newPage.toString());
       }
+      
+      // 左右键切换年份
+      if (availableYears.length === 0) return;
+
+      const currentIndex = availableYears.indexOf(selectedYear);
+
+      if (e.key === 'ArrowLeft' && currentIndex < availableYears.length - 1) {
+        // 左箭头 - 切换到上一年（更早的年份）
+        const newYear = availableYears[currentIndex + 1];
+        setSelectedYear(newYear);
+        toast.success(`切换到 ${newYear} 年`, { id: 'year-change' });
+      } else if (e.key === 'ArrowRight' && currentIndex > 0) {
+        // 右箭头 - 切换到下一年（更新的年份）
+        const newYear = availableYears[currentIndex - 1];
+        setSelectedYear(newYear);
+        toast.success(`切换到 ${newYear} 年`, { id: 'year-change' });
+      } else if (e.key === 'ArrowLeft' && currentIndex === availableYears.length - 1) {
+        // 已经是最早的年份
+        toast.error('已经是最早的年份了', { id: 'year-boundary' });
+      } else if (e.key === 'ArrowRight' && currentIndex === 0) {
+        // 已经是最新的年份
+        toast.error('已经是最新的年份了', { id: 'year-boundary' });
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPage, pages.length]);
+  }, [currentPage, pages.length, selectedYear, availableYears]);
 
   // 开屏页面 - 手帐剪贴风格  
   const WelcomePage = useMemo(() => {
@@ -89,6 +178,72 @@ const AnnualSummary: React.FC = () => {
       <div className="absolute inset-0 opacity-[0.03]" 
         style={PAPER_TEXTURE}
       />
+
+      {/* 年份显示 - 可爱便签风格 */}
+      <motion.div 
+        key={`year-note-${selectedYear}`}
+        initial={{ opacity: 0, scale: 0.8, rotate: 10 }}
+        animate={{ opacity: 1, scale: 1, rotate: -3 }}
+        transition={{ 
+          duration: isInitialLoad ? 1 : 0.3, 
+          delay: isInitialLoad ? 1.5 : 0, 
+          ease: "easeOut" 
+        }}
+        className="absolute top-8 right-24 z-50"
+      >
+        <div className="relative">
+          {/* 便签纸背景 */}
+          <div 
+            className="bg-gradient-to-br from-yellow-100 to-amber-50 p-3 relative"
+            style={{
+              clipPath: `polygon(
+                0% 8%, 8% 0%, 92% 0%, 100% 12%, 
+                100% 88%, 88% 100%, 12% 100%, 0% 85%
+              )`,
+              filter: 'drop-shadow(2px 3px 6px rgba(0,0,0,0.15))',
+              transform: 'rotate(-3deg)',
+              backgroundImage: `
+                radial-gradient(circle at 20% 80%, rgba(255, 193, 7, 0.1) 0%, transparent 50%),
+                linear-gradient(45deg, transparent 48%, rgba(255, 255, 255, 0.3) 49%, rgba(255, 255, 255, 0.3) 51%, transparent 52%)
+              `
+            }}
+          >
+            <div className="text-center">
+              <div className="text-2xl font-bold mb-1 px-2"
+                  style={{
+                    fontFamily: '"Comic Sans MS", cursive',
+                    color: '#a16207',
+                    textShadow: '0 1px 2px rgba(255,255,255,0.9), 0 2px 4px rgba(161,98,7,0.3)',
+                    filter: 'brightness(1.15)',
+                  }}>
+                  {selectedYear}
+                </div>
+
+              <div className="text-xs text-amber-600 font-medium"
+                dangerouslySetInnerHTML={{
+                  __html: `<span style="background: linear-gradient(45deg, transparent 40%, #fbbf2477 50%, transparent 60%); font-weight: bold; padding: 2px; position: relative; border-radius: 2px; color: #92400e;"><span style="text-shadow: 1px 1px 0px #fbbf24; filter: brightness(1.1);">← → 年份</span></span>`
+                }}
+              />
+            </div>
+          </div>
+          
+          {/* 图钉装饰 */}
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.6, delay: 2, ease: "easeOut" }}
+            className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-red-400 rounded-full shadow-sm border border-red-500"
+            style={{
+              background: 'radial-gradient(circle at 30% 30%, #fca5a5, #ef4444)',
+              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))'
+            }}
+          />
+          
+          {/* 小装饰点 */}
+          <div className="absolute -bottom-1 -left-1 w-1.5 h-1.5 bg-orange-300 rounded-full opacity-70" />
+          <div className="absolute -top-1 -right-1 w-1 h-1 bg-yellow-400 rounded-full opacity-60" />
+        </div>
+      </motion.div>
 
              {/* 和纸胶带装饰 - 斜向条纹 */}
        <motion.div
@@ -189,9 +344,14 @@ const AnnualSummary: React.FC = () => {
 
       {/* 年份大卡片 - 报纸剪贴风格 */}
       <motion.div
+        key={`year-card-${selectedYear}`} // 添加key确保年份变化时重新动画
         initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
         animate={{ opacity: 1, scale: 1, rotate: 2 }}
-        transition={{ duration: 1.5, delay: 1.3, ease: "easeOut" }}
+        transition={{ 
+          duration: isInitialLoad ? 1.5 : 0.5, // 初始加载1.5秒，切换时0.5秒
+          delay: isInitialLoad ? 1.3 : 0, // 初始加载有延迟，切换时立即开始
+          ease: "easeOut" 
+        }}
         className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-25"
       >
         <div 
@@ -242,7 +402,7 @@ const AnnualSummary: React.FC = () => {
                   className="text-[8rem] font-bold leading-none"
                   fill="url(#flowingGradient)"
                   style={{ fontSize: '8rem', fontWeight: 'bold' }}>
-              2024
+              {selectedYear}
             </text>
           </svg>
           
@@ -751,7 +911,7 @@ const AnnualSummary: React.FC = () => {
 
     </section>
     );
-  }, []);
+  }, [selectedYear, isInitialLoad]); // 添加selectedYear和isInitialLoad依赖
 
   // 渲染当前页面
   const renderCurrentPage = () => {
@@ -759,7 +919,7 @@ const AnnualSummary: React.FC = () => {
       case 'welcome':
         return WelcomePage;
       case 'financial-overview':
-        return <FinancialOverview />;
+        return <FinancialOverview selectedYear={selectedYear} availableYears={availableYears} />;
       default:
         return WelcomePage;
     }
@@ -782,6 +942,22 @@ const AnnualSummary: React.FC = () => {
           {renderCurrentPage()}
         </motion.div>
       </AnimatePresence>
+
+      {/* Toast 通知 */}
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 2000,
+          style: {
+            background: '#fef3c7',
+            color: '#92400e',
+            border: '1px solid #f59e0b',
+            borderRadius: '8px',
+            fontFamily: '"Comic Sans MS", cursive',
+            fontSize: '14px',
+          },
+        }}
+      />
     </div>
   );
 };

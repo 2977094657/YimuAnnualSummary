@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import toast, { Toaster } from 'react-hot-toast';
 
 // 统一的背景样式 - 手帐剪贴风格
 const UNIFIED_BACKGROUND = {
@@ -37,6 +36,7 @@ interface FinancialData {
   year_end_net_assets: number;
   avg_monthly_income: number;
   avg_monthly_expense: number;
+  avg_daily_expense: number;
   annual_total_transactions: number;
   max_single_income: number;
   max_single_expense: number;
@@ -46,15 +46,88 @@ interface FinancialData {
     count: number;
     percentage: number;
   };
+  time_analysis?: {
+    peak_hour?: {
+      hour: number;
+    };
+    peak_weekday?: {
+      weekday: string;
+    };
+    peak_period?: {
+      period: string;
+    };
+    peak_season?: {
+      season: string;
+    };
+  };
+  behavior_analysis?: {
+    consumption_type?: string;
+    type_description?: string;
+    impulse_days: number;
+    stability_score?: number;
+  };
+  growth_analysis?: {
+    peak_income_month?: {
+      month: string;
+    };
+    savings_trend?: string;
+    consumption_upgrade?: string;
+  };
+  events_analysis?: {
+    special_events?: Array<{
+      event: string;
+      multiplier: number;
+    }>;
+    weekend_vs_workday?: {
+      description: string;
+    };
+    top_expense_days?: Array<{
+      month: number;
+      day: number;
+      amount: number;
+    }>;
+  };
+  account_usage?: Array<{
+    account: string;
+    usage_count: number;
+    percentage: number;
+  }>;
+  location_stats?: Array<{
+    location: string;
+    percentage: number;
+  }>;
+  category_expenses?: Array<{
+    category: string;
+    expense: number;
+  }>;
+  most_frequent_item?: {
+    note: string;
+    count: number;
+  };
+  max_single_expense_data?: {
+    amount: number;
+    date: string;
+    note: string;
+    category: string;
+  };
+  max_single_income_data?: {
+    amount: number;
+    date: string;
+    note: string;
+    category: string;
+  };
 }
 
-const FinancialOverview: React.FC = () => {
+interface FinancialOverviewProps {
+  selectedYear: number;
+  availableYears: number[];
+}
+
+const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, availableYears }) => {
   const [financialData, setFinancialData] = useState<FinancialData | null>(null);
   const [dailyData, setDailyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() - 1);
-  const [availableYears, setAvailableYears] = useState<number[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,64 +163,6 @@ const FinancialOverview: React.FC = () => {
 
     fetchData();
   }, [selectedYear]);
-
-  // 初始化：获取可用年份
-  useEffect(() => {
-    fetchAvailableYears();
-  }, []);
-
-  // 键盘快捷键切换年份
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (availableYears.length === 0) return;
-
-      const currentIndex = availableYears.indexOf(selectedYear);
-
-      if (e.key === 'ArrowLeft' && currentIndex < availableYears.length - 1) {
-        // 左箭头 - 切换到上一年（更早的年份）
-        setSelectedYear(availableYears[currentIndex + 1]);
-      } else if (e.key === 'ArrowRight' && currentIndex > 0) {
-        // 右箭头 - 切换到下一年（更新的年份）
-        setSelectedYear(availableYears[currentIndex - 1]);
-      } else if (e.key === 'ArrowLeft' && currentIndex === availableYears.length - 1) {
-        // 已经是最早的年份
-        toast.error('已经是最早的年份了', { id: 'year-boundary' });
-      } else if (e.key === 'ArrowRight' && currentIndex === 0) {
-        // 已经是最新的年份
-        toast.error('已经是最新的年份了', { id: 'year-boundary' });
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedYear, availableYears]);
-
-  // 获取可用年份列表
-  const fetchAvailableYears = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/api/available-years');
-      if (!response.ok) {
-        throw new Error('Failed to fetch available years');
-      }
-      const data = await response.json();
-      setAvailableYears(data.years || []);
-
-      // 如果当前选择的年份不在可用年份中，选择最新的年份
-      if (data.years && data.years.length > 0 && !data.years.includes(selectedYear)) {
-        setSelectedYear(data.years[0]);
-      }
-    } catch (err) {
-      console.error('获取可用年份失败:', err);
-      toast.error('获取可用年份失败，使用默认年份', { id: 'fetch-years-error' });
-      // 使用默认年份范围作为后备
-      const currentYear = new Date().getFullYear();
-      const defaultYears = [];
-      for (let i = currentYear; i >= currentYear - 5; i--) {
-        defaultYears.push(i);
-      }
-      setAvailableYears(defaultYears);
-    }
-  };
 
   const fetchFinancialData = async (targetYear?: number) => {
     try {
@@ -1389,7 +1404,6 @@ const FinancialOverview: React.FC = () => {
                        })
                      }}
                      whileHover={{ scale: 1.5, zIndex: 10 }}
-                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                      title={`${month+1}月${day}日 ${hasIncome ? `收入: ${formatCurrency(incomeAmount)}` : ''} ${hasExpense ? `支出: ${formatCurrency(expenseAmount)}` : ''} ${!hasIncome && !hasExpense ? '无交易' : ''}`}
                    >
                      {/* 收入部分 - 绿色 */}
@@ -1593,21 +1607,7 @@ const FinancialOverview: React.FC = () => {
          !
        </motion.div>
 
-       {/* Toast 通知 */}
-       <Toaster
-         position="top-center"
-         toastOptions={{
-           duration: 3000,
-           style: {
-             background: '#fef3c7',
-             color: '#92400e',
-             border: '1px solid #f59e0b',
-             borderRadius: '8px',
-             fontFamily: '"Comic Sans MS", cursive',
-             fontSize: '14px',
-           },
-         }}
-       />
+
     </section>
   );
 };
