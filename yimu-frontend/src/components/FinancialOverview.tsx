@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import toast, { Toaster } from 'react-hot-toast';
 
 // 统一的背景样式 - 手帐剪贴风格
 const UNIFIED_BACKGROUND = {
@@ -53,6 +54,7 @@ const FinancialOverview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() - 1);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,33 +91,62 @@ const FinancialOverview: React.FC = () => {
     fetchData();
   }, [selectedYear]);
 
+  // 初始化：获取可用年份
+  useEffect(() => {
+    fetchAvailableYears();
+  }, []);
+
   // 键盘快捷键切换年份
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const yearOptions = getYearOptions();
-      const currentIndex = yearOptions.indexOf(selectedYear);
-      
-      if (e.key === 'ArrowLeft' && currentIndex < yearOptions.length - 1) {
-        // 左箭头 - 切换到上一年
-        setSelectedYear(yearOptions[currentIndex + 1]);
+      if (availableYears.length === 0) return;
+
+      const currentIndex = availableYears.indexOf(selectedYear);
+
+      if (e.key === 'ArrowLeft' && currentIndex < availableYears.length - 1) {
+        // 左箭头 - 切换到上一年（更早的年份）
+        setSelectedYear(availableYears[currentIndex + 1]);
       } else if (e.key === 'ArrowRight' && currentIndex > 0) {
-        // 右箭头 - 切换到下一年
-        setSelectedYear(yearOptions[currentIndex - 1]);
+        // 右箭头 - 切换到下一年（更新的年份）
+        setSelectedYear(availableYears[currentIndex - 1]);
+      } else if (e.key === 'ArrowLeft' && currentIndex === availableYears.length - 1) {
+        // 已经是最早的年份
+        toast.error('已经是最早的年份了', { id: 'year-boundary' });
+      } else if (e.key === 'ArrowRight' && currentIndex === 0) {
+        // 已经是最新的年份
+        toast.error('已经是最新的年份了', { id: 'year-boundary' });
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedYear]);
+  }, [selectedYear, availableYears]);
 
-  // 生成年份选项（当前年份前5年到当前年份）
-  const getYearOptions = () => {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    for (let i = currentYear; i >= currentYear - 5; i--) {
-      years.push(i);
+  // 获取可用年份列表
+  const fetchAvailableYears = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/available-years');
+      if (!response.ok) {
+        throw new Error('Failed to fetch available years');
+      }
+      const data = await response.json();
+      setAvailableYears(data.years || []);
+
+      // 如果当前选择的年份不在可用年份中，选择最新的年份
+      if (data.years && data.years.length > 0 && !data.years.includes(selectedYear)) {
+        setSelectedYear(data.years[0]);
+      }
+    } catch (err) {
+      console.error('获取可用年份失败:', err);
+      toast.error('获取可用年份失败，使用默认年份', { id: 'fetch-years-error' });
+      // 使用默认年份范围作为后备
+      const currentYear = new Date().getFullYear();
+      const defaultYears = [];
+      for (let i = currentYear; i >= currentYear - 5; i--) {
+        defaultYears.push(i);
+      }
+      setAvailableYears(defaultYears);
     }
-    return years;
   };
 
   const fetchFinancialData = async (targetYear?: number) => {
@@ -187,24 +218,123 @@ const FinancialOverview: React.FC = () => {
     );
   }
 
-  // 核心财务指标（精简版）
+  // 生成时间分析内容
+  const generateTimeAnalysisContent = () => {
+    const timeData = financialData?.time_analysis;
+    if (!timeData) return "正在分析你的消费时间密码...";
+
+    let content = "";
+
+    if (timeData.peak_hour?.hour !== null && timeData.peak_hour?.hour !== undefined) {
+      content += `最爱在 **${timeData.peak_hour.hour}:00** 买买买 <img src="/EffectEmoji/🏃_AgADUUoAAux4cEg.gif" alt="🏃" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+    }
+
+    if (timeData.peak_weekday?.weekday) {
+      if (content) content += "，";
+      content += `**${timeData.peak_weekday.weekday}** 是我的快乐剁手日 <img src="/CuteEmoji/☺_AgAD40MAAn5wWEs.webp" alt="☺" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+    }
+
+    if (timeData.peak_period?.period) {
+      if (content) content += "，";
+      content += `**${timeData.peak_period.period}** 花钱最多 <img src="/CuteEmoji/⚠_AgADQkcAAjlfYEs.webp" alt="⚠" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+    }
+
+    if (timeData.peak_season?.season) {
+      if (content) content += "，";
+      content += `**${timeData.peak_season.season}** 让我变成购物狂`;
+    }
+
+    return content ? content + "～" : "时间分析数据不足";
+  };
+
+  // 生成行为分析内容
+  const generateBehaviorAnalysisContent = () => {
+    const behaviorData = financialData?.behavior_analysis;
+    if (!behaviorData) return "正在分析你的消费行为画像...";
+
+    let content = "";
+
+    if (behaviorData.consumption_type) {
+      content += `我是个 **${behaviorData.consumption_type}** <img src="/CuteEmoji/💕_AgADGkYAAgKMWUs.webp" alt="💕" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+    }
+
+    if (behaviorData.type_description) {
+      if (content) content += "，";
+      content += `${behaviorData.type_description}`;
+    }
+
+    if (behaviorData.impulse_days > 0) {
+      if (content) content += "。";
+      content += `偶尔会有购物小爆发 <img src="/EffectEmoji/💨_AgADZ1AAAiOKaEg.gif" alt="💨" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，有 **${behaviorData.impulse_days}** 天的冲动消费`;
+    }
+
+    if (behaviorData.stability_score !== undefined) {
+      if (content) content += "。";
+      content += `消费稳定性 **${behaviorData.stability_score}分**`;
+      if (behaviorData.stability_score >= 80) {
+        content += `，是个规律的小财迷 <img src="/CuteEmoji/🤩_AgADokIAAgbGYUs.webp" alt="🤩" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      } else if (behaviorData.stability_score >= 60) {
+        content += `，消费比较有规律 <img src="/CuteEmoji/😌_AgADA0cAAgG0WUs.webp" alt="😌" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      } else {
+        content += `，消费比较随性 <img src="/CuteEmoji/😏_AgADyEMAAvK9WUs.webp" alt="😏" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      }
+    }
+
+    return content ? content + "～" : "行为分析数据不足";
+  };
+
+  // 生成成长分析内容
+  const generateGrowthAnalysisContent = () => {
+    const growthData = financialData?.growth_analysis;
+    if (!growthData) return "正在分析你的财务成长轨迹...";
+
+    let content = "";
+
+    if (growthData.peak_income_month?.month) {
+      content += `**${growthData.peak_income_month.month}月** 是我的发财月，收入创新高！<img src="/EffectEmoji/🚀_AgADFlUAAnmiaUg.gif" alt="🚀" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+    }
+
+    if (growthData.savings_trend) {
+      if (content) content += " ";
+      content += `${growthData.savings_trend}`;
+    }
+
+    if (growthData.consumption_upgrade) {
+      if (content) content += " ";
+      content += `${growthData.consumption_upgrade}`;
+    }
+
+    return content || "成长数据不足";
+  };
+
+  // 生成事件分析内容
+  const generateEventsAnalysisContent = () => {
+    const eventsData = financialData?.events_analysis;
+    if (!eventsData) return "正在回忆你的特殊时刻...";
+
+    let content = "";
+
+    if (eventsData.special_events && eventsData.special_events.length > 0) {
+      const event = eventsData.special_events[0];
+      content += `**${event.event}** 让我变身购物狂魔，花了平时 **${event.multiplier}倍** 的钱！`;
+    }
+
+    if (eventsData.weekend_vs_workday?.description) {
+      if (content) content += " ";
+      content += `${eventsData.weekend_vs_workday.description}`;
+    }
+
+    if (eventsData.top_expense_days && eventsData.top_expense_days.length > 0) {
+      const topDay = eventsData.top_expense_days[0];
+      if (content) content += "。";
+      content += `最大的破产日是 **${topDay.month}月${topDay.day}日**，花了 **${formatCurrency(topDay.amount)}** <img src="/EffectEmoji/😭_AgADvVYAAj2maUg.gif" alt="😭" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+    }
+
+    return content ? content + "～" : "特殊事件数据不足";
+  };
+
+  // 核心财务指标（只保留储蓄）
   const coreMetrics = [
-    {
-      title: '今年一共赚了',
-      value: formatCurrency(financialData.annual_total_income),
-      icon: <img src="/SavedStickers/💰_AgADClAAAmeMcEs.webp" alt="💰" className="w-6 h-6" />,
-      bgColor: 'from-green-100 to-emerald-200',
-      borderColor: 'border-green-300',
-      description: '辛苦一年的收获'
-    },
-    {
-      title: '今年一共花了',
-      value: formatCurrency(financialData.annual_total_expense),
-      icon: <img src="/SavedStickers/💰_AgADClAAAmeMcEs.webp" alt="💸" className="w-6 h-6" />,
-      bgColor: 'from-red-100 to-rose-200',
-      borderColor: 'border-red-300',
-      description: '生活的必要开销'
-    },
     {
       title: '今年存下了',
       value: formatCurrency(financialData.annual_net_savings),
@@ -212,6 +342,38 @@ const FinancialOverview: React.FC = () => {
       bgColor: financialData.annual_net_savings >= 0 ? 'from-blue-100 to-sky-200' : 'from-orange-100 to-amber-200',
       borderColor: financialData.annual_net_savings >= 0 ? 'border-blue-300' : 'border-orange-300',
       description: financialData.annual_net_savings >= 0 ? '为未来积累的财富' : '需要调整的地方'
+    }
+  ];
+
+  // 新的分析维度卡片数据
+  const analysisCards = [
+    {
+      title: '我的消费时间密码',
+      icon: <img src="/SavedStickers/☀_AgADREgAAg1PSUs.webp" alt="☀" className="w-6 h-6" />,
+      bgColor: 'from-purple-100 to-violet-200',
+      borderColor: 'border-purple-300',
+      content: generateTimeAnalysisContent()
+    },
+    {
+      title: '消费行为小画像',
+      icon: <img src="/SavedStickers/👀_AgAD51QAAjbtiEg.webp" alt="👀" className="w-6 h-6" />,
+      bgColor: 'from-pink-100 to-rose-200',
+      borderColor: 'border-pink-300',
+      content: generateBehaviorAnalysisContent()
+    },
+    {
+      title: '财务成长轨迹',
+      icon: <img src="/SavedStickers/⬆_AgADjkoAAnEqcEs.webp" alt="⬆" className="w-6 h-6" />,
+      bgColor: 'from-green-100 to-emerald-200',
+      borderColor: 'border-green-300',
+      content: generateGrowthAnalysisContent()
+    },
+    {
+      title: '特殊时刻回忆录',
+      icon: <img src="/SavedStickers/⭐_AgADrUUAAt3FKEs.webp" alt="⭐" className="w-6 h-6" />,
+      bgColor: 'from-yellow-100 to-amber-200',
+      borderColor: 'border-yellow-300',
+      content: generateEventsAnalysisContent()
     }
   ];
 
@@ -235,67 +397,72 @@ const FinancialOverview: React.FC = () => {
     const accountCount = accountUsage.length;
     const mostUsedAccount = accountUsage[0] || { account: '', usage_count: 0, percentage: 0 };
     
-    // 主要内容 - 温馨日常碎碎念风格（简化版）
-    let mainContent = `这一年和 **一木记账** 记录了 **${totalTransactions}** 条小账单，用过 **${accountCount}** 个账户`;
-    
+    // 基础记账统计
+    let basicContent = `这一年和 **一木记账** 记录了 **${totalTransactions}** 条小账单 <img src="/CuteEmoji/📕_AgADbEEAArzPWUs.webp" alt="📕" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，用过 **${accountCount}** 个账户`;
     if (mostUsedAccount.account) {
-      mainContent += `，最爱用 **${mostUsedAccount.account}**，占了 **${mostUsedAccount.percentage}%**`;
+      basicContent += `，最爱用 **${mostUsedAccount.account}**，占了 **${mostUsedAccount.percentage}%** <img src="/CuteEmoji/💛_AgADKEYAAm_jWUs.webp" alt="💛" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
     }
-    
-    mainContent += ` 收获了 **${formatCurrency(totalIncome)}** 小确幸，花掉 **${formatCurrency(totalExpense)}**，存下 **${formatCurrency(netSavings)}** 小金库，平均每天花费 **${formatCurrency(avgDailyExpense)}**`;
-    
-    // 添加收入来源洞察
+
+    insights.push(basicContent);
+
+    // 收支总结与收入来源（合并）
+    let financeContent = `收获了 **${formatCurrency(totalIncome)}** 小确幸，花掉 **${formatCurrency(totalExpense)}**，存下 **${formatCurrency(netSavings)}** 小金库 <img src="/CuteEmoji/👛_AgADlkgAAgjFWUs.webp" alt="👛" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，平均每天花费 **${formatCurrency(avgDailyExpense)}**`;
+
     if (financialData.main_income_source && financialData.main_income_source.source) {
       const incomeSource = financialData.main_income_source;
-      mainContent += `，这一年大部分收入都来源于 **${incomeSource.source}**，贡献了 **${incomeSource.percentage}%** 的收入呢`;
+      financeContent += `。这一年大部分收入都来源于 **${incomeSource.source}**，贡献了 **${incomeSource.percentage}%** 的收入呢 <img src="/CuteEmoji/🌟_AgADyEUAAh_uWEs.webp" alt="🌟" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
     }
-    
-    // 最高支出信息 - 温馨化（简化）
+    insights.push(financeContent);
+
+    // 最高收支信息（合并）
+    let extremeContent = "";
     if (maxExpenseData.amount > 0) {
       const expenseDate = new Date(maxExpenseData.date);
       const month = expenseDate.getMonth() + 1;
       const day = expenseDate.getDate();
-      
+
       if (maxExpenseData.note && maxExpenseData.note.trim()) {
-        mainContent += ` **${month}月${day}日** 为 **${maxExpenseData.note}** 花了 **${formatCurrency(maxExpenseData.amount)}**，是今年最大手笔呢`;
+        extremeContent += `**${month}月${day}日** 为 **${maxExpenseData.note}** 花了 **${formatCurrency(maxExpenseData.amount)}**，是今年最大手笔呢 <img src="/CuteEmoji/💎_AgAD7kcAAnw6WEs.webp" alt="💎" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
       } else {
-        mainContent += ` **${month}月${day}日** 在 **${maxExpenseData.category}** 花了 **${formatCurrency(maxExpenseData.amount)}**，是今年最大手笔呢`;
+        extremeContent += `**${month}月${day}日** 在 **${maxExpenseData.category}** 花了 **${formatCurrency(maxExpenseData.amount)}**，是今年最大手笔呢 <img src="/CuteEmoji/💎_AgAD7kcAAnw6WEs.webp" alt="💎" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
       }
     }
-    
-    // 最高收入信息 - 温馨化（简化）
+
     if (maxIncomeData.amount > 0) {
       const incomeDate = new Date(maxIncomeData.date);
       const month = incomeDate.getMonth() + 1;
       const day = incomeDate.getDate();
-      
-      mainContent += ` **${month}月${day}日** 收到 **${formatCurrency(maxIncomeData.amount)}`;
+
+      if (extremeContent) extremeContent += "。";
+      extremeContent += `**${month}月${day}日** 收到 **${formatCurrency(maxIncomeData.amount)}`;
       if (maxIncomeData.note && maxIncomeData.note.trim()) {
-        mainContent += ` ${maxIncomeData.note}**`;
+        extremeContent += ` ${maxIncomeData.note}**`;
       } else {
-        mainContent += ` ${maxIncomeData.category}**`;
+        extremeContent += ` ${maxIncomeData.category}**`;
       }
-      mainContent += ` 的惊喜，是今年最大收入呢`;
+      extremeContent += ` 的惊喜，是今年最大收入呢 <img src="/EffectEmoji/🎆_AgADPFgAAjqrYUg.gif" alt="🎆" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
     }
-    
-    insights.push(mainContent);
+
+    if (extremeContent) {
+      insights.push(extremeContent);
+    }
     
     // 地点消费统计 - 温馨化
     if (locationStats.length > 0) {
       const topLocation = locationStats[0];
-      insights.push(`**${topLocation.location}** 真是我的心头好呢，在那里的消费占了全部的 **${topLocation.percentage}%**，每次去都忍不住买买买～`);
+      insights.push(`**${topLocation.location}** 真是我的心头好呢 <img src="/CuteEmoji/💗_AgADd0EAAibUWUs.webp" alt="💗" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，在那里的消费占了全部的 **${topLocation.percentage}%**，每次去都忍不住买买买～ <img src="/EffectEmoji/🏃_AgADUUoAAux4cEg.gif" alt="🏃" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`);
     }
     
     // 分类支出统计 - 温馨化
     if (categoryExpenses.length > 0) {
       const topCategory = categoryExpenses[0];
       const categoryCount = categoryExpenses.length;
-      insights.push(`生活被我分成了 **${categoryCount}** 个小类别，其中 **${topCategory.category}** 最得我心，花费了 **${formatCurrency(topCategory.expense)}**，果然是我最舍得投资的地方呀`);
+      insights.push(`生活被我分成了 **${categoryCount}** 个小类别 <img src="/CuteEmoji/🎨_AgADs0sAApniWUs.webp" alt="🎨" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，其中 **${topCategory.category}** 最得我心，花费了 **${formatCurrency(topCategory.expense)}**，果然是我最舍得投资的地方呀 <img src="/EffectEmoji/☀_AgADk0kAAvQnaEg.gif" alt="☀" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`);
     }
     
     // 最常购买物品 - 温馨化
     if (mostFrequentItem.note && mostFrequentItem.count > 0) {
-      insights.push(`说到最爱，**${mostFrequentItem.note}** 绝对是我的心头宝，忍不住买了 **${mostFrequentItem.count}** 次，真是越买越开心呢`);
+      insights.push(`说到最爱，**${mostFrequentItem.note}** 绝对是我的心头宝 <img src="/CuteEmoji/👑_AgADHj8AAgQPWUs.webp" alt="👑" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，忍不住买了 **${mostFrequentItem.count}** 次，真是越买越开心呢 <img src="/EffectEmoji/💕_AgAD00sAAvGscEg.gif" alt="💕" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`);
     }
     
     return insights;
@@ -333,8 +500,8 @@ const FinancialOverview: React.FC = () => {
             }}
           >
                                                    <div className="text-center">
-               <div className="text-2xl font-bold mb-1 px-2" 
-                   style={{ 
+               <div className="text-2xl font-bold mb-1 px-2"
+                   style={{
                      fontFamily: '"Comic Sans MS", cursive',
                      color: '#a16207',
                      textShadow: '0 1px 2px rgba(255,255,255,0.9), 0 2px 4px rgba(161,98,7,0.3)',
@@ -342,8 +509,8 @@ const FinancialOverview: React.FC = () => {
                    }}>
                    {selectedYear}
                  </div>
-               
-               <div className="text-xs text-amber-600 font-medium" 
+
+               <div className="text-xs text-amber-600 font-medium"
                  dangerouslySetInnerHTML={{
                    __html: `<span style="background: linear-gradient(45deg, transparent 40%, #fbbf2477 50%, transparent 60%); font-weight: bold; padding: 2px; position: relative; border-radius: 2px; color: #92400e;"><span style="text-shadow: 1px 1px 0px #fbbf24; filter: brightness(1.1);">← → 年份</span></span>`
                  }}
@@ -423,90 +590,339 @@ const FinancialOverview: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* 核心指标卡片 - 不规则分布 */}
-      <div className="absolute inset-0 z-10">
-        {coreMetrics.map((metric, index) => {
-          // 为每个卡片设置不同的位置 - 上面两个，下面一个
-          const positions = [
-            { top: '6%', left: '28%', rotate: '-3deg' },
-            { top: '6%', left: '50%', rotate: '2deg' },
-            { top: '85%', left: '22%', rotate: '-1deg' }
-          ];
-          
-          const position = positions[index];
-          
-          return (
-            <motion.div
-              key={metric.title}
-              initial={{ opacity: 0, x: -100, rotate: -10 }}
-              animate={{ opacity: 1, x: 0, rotate: 0 }}
-              transition={{ duration: 0.8, delay: index * 0.4, ease: "easeOut" }}
-              className={`absolute ${index === 2 ? 'w-40' : 'w-32'}`}
-              style={{
-                top: position.top,
-                left: position.left,
-                transform: `rotate(${position.rotate})`,
-                overflow: 'visible'
-              }}
-            >
-              {/* 胶带装饰 - 移到clipPath容器外面 */}
-              {index === 0 && (
-                <div className="absolute -top-1 left-1/3 w-10 h-3 bg-yellow-200 opacity-80 rotate-12 z-20"
-                  style={{
-                    clipPath: 'polygon(5% 0%, 95% 10%, 100% 90%, 0% 100%)',
-                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0,0,0,0.04) 4px, rgba(0,0,0,0.04) 8px)'
-                  }}
-                />
-              )}
-              
-              {index === 1 && (
-                <div className="absolute -top-2 right-1/4 w-8 h-4 bg-blue-200 opacity-70 -rotate-6 z-20"
-                  style={{
-                    clipPath: 'polygon(10% 5%, 90% 0%, 95% 95%, 5% 100%)',
-                    backgroundImage: 'repeating-linear-gradient(-30deg, transparent, transparent 3px, rgba(0,0,0,0.03) 3px, rgba(0,0,0,0.03) 6px)'
-                  }}
-                />
-              )}
-              
-              {index === 2 && (
-                <div className="absolute -top-0.5 left-1/2 w-6 h-5 bg-pink-200 opacity-75 rotate-45 z-20"
-                  style={{
-                    clipPath: 'polygon(0% 20%, 80% 0%, 100% 80%, 20% 100%)',
-                    backgroundImage: 'repeating-linear-gradient(60deg, transparent, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 6px)'
-                  }}
-                />
-              )}
-              
-              <div 
-                className={`bg-gradient-to-br ${metric.bgColor} p-2 relative border ${metric.borderColor}`}
+      {/* 上方分析卡片区域 - 仿照右边的大卡片设计 */}
+      <motion.div
+        initial={{ opacity: 0, x: -50, rotate: -8 }}
+        animate={{ opacity: 1, x: 0, rotate: -3 }}
+        transition={{ duration: 1, delay: 1.2, ease: "easeOut" }}
+        className="absolute top-8 left-[480px] z-50 w-[600px]"
+      >
+        {/* 胶带装饰 - 右下角 */}
+        <div className="absolute -bottom-4 right-6 w-12 h-5 bg-orange-200 opacity-70 -rotate-20 z-10"
+          style={{
+            clipPath: 'polygon(10% 0%, 90% 15%, 100% 85%, 0% 100%)',
+            backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,0.03) 4px, rgba(0,0,0,0.03) 8px)'
+          }}
+        />
+
+        <div
+          className="bg-orange-100 border-l-4 border-orange-300 p-3 relative"
+          style={{
+            clipPath: `polygon(
+              5% 3%, 95% 0%, 98% 92%, 90% 100%,
+              2% 97%, 0% 8%
+            )`,
+            filter: 'drop-shadow(3px 5px 10px rgba(0,0,0,0.12))',
+            transform: 'rotate(-1deg)'
+          }}
+        >
+
+
+          <div className="flex gap-4 justify-center">
+            {analysisCards.slice(0, 2).map((card, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 1.5 + index * 0.2, ease: "easeOut" }}
+                className="bg-white px-4 py-3 rounded-lg border border-gray-200 relative"
                 style={{
                   clipPath: `polygon(
-                    3% 6%, 7% 1%, 93% 3%, 97% 9%, 
-                    95% 91%, 89% 97%, 11% 95%, 5% 89%
+                    3% 8%, 8% 2%, 92% 5%, 97% 12%,
+                    94% 88%, 89% 96%, 11% 93%, 6% 85%
                   )`,
-                  filter: 'drop-shadow(2px 3px 6px rgba(0,0,0,0.15))'
+                  filter: 'drop-shadow(1px 2px 4px rgba(0,0,0,0.1))',
+                  transform: `rotate(${(index % 2 === 0 ? 1 : -1) * 1}deg)`
                 }}
               >
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg">{metric.icon}</span>
-                  <div className="flex-1">
-                    <h3 className="text-xs font-semibold text-gray-700 mb-0.5">{metric.title}</h3>
-                    <p className="text-sm font-bold text-gray-800">{metric.value}</p>
-                    <p className="text-xs text-gray-600 mt-0.5">{metric.description}</p>
-                  </div>
+                <div className="flex items-center mb-1">
+                  {card.icon}
+                  <h4 className="text-sm font-bold text-gray-700 ml-2">{card.title}</h4>
                 </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+                <div className="text-xs text-gray-600 leading-tight relative">
+                  {/* 手绘装饰元素 - 仿照右边的设计 */}
+                  {index === 0 && (
+                    <>
+                      <div className="absolute -top-2 left-1 text-red-400 text-xs transform -rotate-12 z-10">★</div>
+                      <div className="absolute -bottom-1 right-6 w-8 h-1 bg-yellow-300 opacity-40 transform rotate-3 z-10"></div>
+                      <svg className="absolute -top-1 right-2 w-4 h-4 text-blue-300 opacity-60" viewBox="0 0 20 20">
+                        <circle cx="10" cy="10" r="6" stroke="currentColor" strokeWidth="1" fill="none" strokeDasharray="2,2"/>
+                      </svg>
+                    </>
+                  )}
+                  {index === 1 && (
+                    <>
+                      <div className="absolute -top-2 right-2 w-6 h-3 bg-pink-300 opacity-60 rotate-45 z-10"
+                        style={{
+                          clipPath: 'polygon(20% 0%, 100% 20%, 80% 100%, 0% 80%)',
+                          backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px)'
+                        }}
+                      />
+                      <svg className="absolute top-1 left-0 w-3 h-3 text-green-400 opacity-70" viewBox="0 0 20 20">
+                        <path d="M5,10 L10,15 L15,5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round"/>
+                      </svg>
+                      <svg className="absolute -bottom-2 right-1 w-6 h-2 text-purple-300 opacity-50" viewBox="0 0 30 10">
+                        <path d="M2,5 Q8,2 15,5 T28,5" stroke="currentColor" strokeWidth="1" fill="none" strokeDasharray="1,1"/>
+                      </svg>
+                    </>
+                  )}
+
+                  <span dangerouslySetInnerHTML={{
+                    __html: card.content.replace(/\*\*(.*?)\*\*/g, (match, p1, offset) => {
+                      const colors = ['#7c3aed', '#ec4899', '#10b981', '#f59e0b'];
+                      const color = colors[offset % colors.length];
+                      const decorations = [
+                        // 波浪下划线
+                        `<span style="background: linear-gradient(120deg, ${color}22 0%, ${color}44 100%); padding: 2px 4px; border-radius: 3px; font-weight: bold; position: relative;"><span style="border-bottom: 2px wavy ${color}; text-decoration: underline; text-decoration-color: ${color}; text-decoration-style: wavy;">${p1}</span></span>`,
+                        // 虚线边框
+                        `<span style="background: ${color}33; padding: 1px 3px; border-radius: 50px; font-weight: bold; border: 2px dashed ${color}; position: relative; transform: rotate(${Math.random() > 0.5 ? 1 : -1}deg);">${p1}</span>`,
+                        // 荧光笔效果
+                        `<span style="background: linear-gradient(45deg, transparent 40%, ${color}77 50%, transparent 60%); font-weight: bold; padding: 2px; position: relative; border-radius: 2px;"><span style="text-shadow: 1px 1px 0px ${color}; filter: brightness(1.1);">${p1}</span></span>`,
+                        // 手写框框
+                        `<span style="border: 2px solid ${color}; border-radius: 8px; padding: 2px 4px; background: ${color}11; font-weight: bold; position: relative; transform: rotate(${(offset % 3 - 1) * 1.5}deg); display: inline-block; box-shadow: 1px 2px 3px ${color}44;">${p1}</span>`
+                      ];
+                      return decorations[offset % decorations.length];
+                    })
+                  }} />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 下方分析卡片区域 - 仿照右边的大卡片设计 */}
+      <motion.div
+        initial={{ opacity: 0, x: -50, rotate: -8 }}
+        animate={{ opacity: 1, x: 0, rotate: 2 }}
+        transition={{ duration: 1, delay: 1.8, ease: "easeOut" }}
+        className="absolute bottom-4 left-40 z-50 w-[900px]"
+      >
+        {/* 胶带装饰 - 左上角 */}
+        <div className="absolute -top-3 left-8 w-10 h-4 bg-pink-200 opacity-70 rotate-15 z-10"
+          style={{
+            clipPath: 'polygon(8% 0%, 92% 12%, 100% 88%, 0% 100%)',
+            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)'
+          }}
+        />
+
+        <div
+          className="bg-green-100 border-l-4 border-green-300 p-3 relative"
+          style={{
+            clipPath: `polygon(
+              3% 2%, 97% 0%, 100% 94%, 92% 100%,
+              0% 98%, 0% 6%
+            )`,
+            filter: 'drop-shadow(3px 5px 10px rgba(0,0,0,0.12))',
+            transform: 'rotate(2deg)'
+          }}
+        >
+
+
+          <div className="flex gap-4 justify-start">
+            {analysisCards.slice(2, 4).map((card, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 2.1 + index * 0.2, ease: "easeOut" }}
+                className={`bg-white px-4 py-3 rounded-lg border border-gray-200 relative h-24 flex-shrink-0 ${index === 1 ? 'w-[450px]' : 'w-[400px]'}`}
+                style={{
+                  clipPath: `polygon(
+                    2% 6%, 6% 1%, 94% 3%, 98% 9%,
+                    96% 91%, 92% 97%, 8% 95%, 4% 89%
+                  )`,
+                  filter: 'drop-shadow(1px 2px 4px rgba(0,0,0,0.1))',
+                  transform: `rotate(${(index % 2 === 0 ? -1 : 1) * 1}deg)`
+                }}
+              >
+                <div className="flex items-center mb-1">
+                  {card.icon}
+                  <h4 className="text-sm font-bold text-gray-700 ml-2">{card.title}</h4>
+                </div>
+                <div className="text-xs text-gray-600 leading-tight relative overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                  {/* 手绘装饰元素 - 仿照右边的设计 */}
+                  {index === 0 && (
+                    <>
+                      <svg className="absolute -top-2 left-2 w-4 h-4 text-green-400 opacity-60" viewBox="0 0 20 20">
+                        <path d="M10 3 L12 8 L17 8 L13 12 L15 17 L10 14 L5 17 L7 12 L3 8 L8 8 Z" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.3"/>
+                      </svg>
+                      <div className="absolute bottom-0 right-0 text-green-400 text-xs transform rotate-30 z-10">✓</div>
+                      <svg className="absolute -top-1 right-3 w-5 h-2 text-blue-300 opacity-50" viewBox="0 0 25 10">
+                        <path d="M2,5 Q8,2 15,5 T23,5" stroke="currentColor" strokeWidth="1" fill="none" strokeDasharray="2,1"/>
+                      </svg>
+                    </>
+                  )}
+                  {index === 1 && (
+                    <>
+                      <svg className="absolute -top-1 right-0 w-2 h-6 text-yellow-400 opacity-60" viewBox="0 0 10 30">
+                        <rect x="3" y="2" width="4" height="26" fill="currentColor" transform="rotate(-15 5 15)"/>
+                      </svg>
+                      <svg className="absolute -bottom-1 left-1 w-4 h-4 text-orange-400 opacity-70" viewBox="0 0 20 20">
+                        <path d="M10 15 Q6 10 10 5 Q14 10 10 15" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.4"/>
+                      </svg>
+                      <svg className="absolute top-2 left-2 w-3 h-3 text-pink-400 opacity-60" viewBox="0 0 15 15">
+                        <circle cx="7.5" cy="7.5" r="5" stroke="currentColor" strokeWidth="1" fill="none" strokeDasharray="1,1"/>
+                        <circle cx="7.5" cy="7.5" r="1" fill="currentColor"/>
+                      </svg>
+                    </>
+                  )}
+
+                  <span dangerouslySetInnerHTML={{
+                    __html: card.content.replace(/\*\*(.*?)\*\*/g, (match, p1, offset) => {
+                      const colors = ['#7c3aed', '#ec4899', '#10b981', '#f59e0b'];
+                      const color = colors[offset % colors.length];
+                      const decorations = [
+                        // 左侧标记条
+                        `<span style="background: ${color}22; padding: 2px 4px; font-weight: bold; position: relative; border-left: 4px solid ${color}; border-radius: 0 4px 4px 0; margin: 0 1px;">${p1}</span>`,
+                        // 不规则圆圈包围
+                        `<span style="border: 3px solid ${color}; border-radius: 45% 55% 52% 48%; padding: 2px 6px; background: ${color}15; font-weight: bold; display: inline-block; transform: rotate(${(offset % 2 === 0 ? 3 : -3)}deg); box-shadow: 0 0 8px ${color}44;">${p1}</span>`,
+                        // 双重下划线
+                        `<span style="font-weight: bold; position: relative; color: ${color}; text-shadow: 1px 1px 0px rgba(0,0,0,0.1);"><span style="border-bottom: 3px double ${color}; padding-bottom: 1px;">${p1}</span></span>`,
+                        // 星星装饰
+                        `<span style="background: linear-gradient(135deg, ${color}33, ${color}55); padding: 2px 4px; font-weight: bold; border-radius: 6px; position: relative; box-shadow: 0 1px 3px ${color}66;"><span style="color: ${color};">${p1}</span><span style="position: absolute; top: -6px; left: -4px; color: ${color}; font-size: 8px;">★</span></span>`
+                      ];
+                      return decorations[offset % decorations.length];
+                    })
+                  }} />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 左侧随机涂鸦元素 - 仿照右边的设计 */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.6 }}
+        transition={{ duration: 1, delay: 4 }}
+        className="absolute top-32 left-32 transform -rotate-12 z-10"
+      >
+        <img src="/SavedStickers/⚡_AgADYjoAAsSvSUs.webp" alt="⚡" className="w-5 h-5" />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.5 }}
+        transition={{ duration: 1, delay: 4.5 }}
+        className="absolute top-52 left-16 transform rotate-45 z-10"
+      >
+        <img src="/SavedStickers/🌸_AgADdj8AAgj3WUo.webp" alt="🌸" className="w-4 h-4" />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        transition={{ duration: 1, delay: 5 }}
+        className="absolute bottom-32 left-32 transform -rotate-6 z-10"
+      >
+        <img src="/SavedStickers/🌿_AgADwU4AAuBjcEo.webp" alt="🌿" className="w-5 h-5" />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.5 }}
+        transition={{ duration: 1, delay: 5.5 }}
+        className="absolute top-24 left-64 transform rotate-20 z-10"
+      >
+        <img src="/SavedStickers/💖_AgADlVUAAltsiEg.webp" alt="💖" className="w-4 h-4" />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        transition={{ duration: 1, delay: 6 }}
+        className="absolute top-80 left-24 transform -rotate-30 z-10"
+      >
+        <img src="/SavedStickers/🍀_AgAD9UkAAvGzcEo.webp" alt="🍀" className="w-4 h-4" />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.6 }}
+        transition={{ duration: 1, delay: 6.5 }}
+        className="absolute bottom-48 left-56 transform rotate-15 z-10"
+      >
+        <img src="/SavedStickers/⭐_AgADrUUAAt3FKEs.webp" alt="⭐" className="w-4 h-4" />
+      </motion.div>
+
+      {/* 手绘箭头 - 左侧 */}
+      <motion.div
+        initial={{ opacity: 0, pathLength: 0 }}
+        animate={{ opacity: 0.3, pathLength: 1 }}
+        transition={{ duration: 2, delay: 3.5 }}
+        className="absolute top-72 left-48 z-10"
+      >
+        <svg width="50" height="30" viewBox="0 0 50 30" className="text-blue-300">
+          <motion.path
+            d="M5,20 Q25,5 40,15"
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="none"
+            strokeDasharray="2,2"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 2, delay: 3.5 }}
+          />
+          <polygon points="35,10 40,15 35,20" fill="currentColor" />
+        </svg>
+      </motion.div>
+
+      {/* 手绘圆圈装饰 */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 0.3, scale: 1 }}
+        transition={{ duration: 1.5, delay: 4.2 }}
+        className="absolute top-60 left-40 z-10"
+      >
+        <svg width="30" height="30" viewBox="0 0 30 30" className="text-red-300">
+          <motion.circle
+            cx="15"
+            cy="15"
+            r="12"
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="none"
+            strokeDasharray="4,4"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 2, delay: 4.2 }}
+          />
+        </svg>
+      </motion.div>
+
+      {/* 手绘波浪线 */}
+      <motion.div
+        initial={{ opacity: 0, pathLength: 0 }}
+        animate={{ opacity: 0.4, pathLength: 1 }}
+        transition={{ duration: 2.5, delay: 5.2 }}
+        className="absolute bottom-24 left-20 z-10"
+      >
+        <svg width="80" height="20" viewBox="0 0 80 20" className="text-indigo-300">
+          <motion.path
+            d="M5,10 Q20,5 35,10 T65,10"
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="none"
+            strokeDasharray="3,2"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 2.5, delay: 5.2 }}
+          />
+        </svg>
+      </motion.div>
+
+
+
+
 
       {/* 数据洞察卡片 */}
       <motion.div
         initial={{ opacity: 0, x: 50, rotate: 8 }}
         animate={{ opacity: 1, x: 0, rotate: 5 }}
         transition={{ duration: 1, delay: 1.5, ease: "easeOut" }}
-        className="absolute top-20 right-16 z-50 w-80"
+        className="absolute top-20 right-16 z-50 w-80 h-[750px]"
       >
         {/* 移除左上角胶带装饰 */}
         
@@ -518,8 +934,8 @@ const FinancialOverview: React.FC = () => {
           }}
         />
         
-        <div 
-          className="bg-yellow-100 border-l-4 border-yellow-300 p-5 relative"
+        <div
+          className="bg-yellow-100 border-l-4 border-yellow-300 pt-8 px-3 pb-3 relative h-full overflow-hidden"
           style={{
             clipPath: `polygon(
               5% 3%, 95% 0%, 98% 92%, 90% 100%, 
@@ -530,8 +946,8 @@ const FinancialOverview: React.FC = () => {
           }}
         >
           
-          <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center"><img src="/SavedStickers/💖_AgADlVUAAltsiEg.webp" alt="💝" className="w-8 h-8 mr-2" /> 今年的财务小结</h3>
-          <div className="space-y-1">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center"><img src="/SavedStickers/💖_AgADlVUAAltsiEg.webp" alt="💝" className="w-7 h-7 mr-2" /> 今年的财务小结</h3>
+          <div className="space-y-1 max-h-[680px]">
             {insights.map((insight, index) => (
               <div key={index} className="relative">
                 {/* 手绘装饰元素 - 在外层避免被clip-path裁剪 */}
@@ -575,7 +991,7 @@ const FinancialOverview: React.FC = () => {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 3 + index * 0.2, ease: "easeOut" }}
-                  className="text-sm text-gray-600 leading-relaxed p-3 bg-gray-50 rounded-lg border border-gray-200 relative"
+                  className="text-sm text-gray-600 leading-snug p-2.5 bg-gray-50 rounded-lg border border-gray-200 relative"
                   style={{
                     clipPath: `polygon(
                       1% 10%, 5% 2%, 95% 5%, 99% 15%, 
@@ -1176,6 +1592,22 @@ const FinancialOverview: React.FC = () => {
        >
          !
        </motion.div>
+
+       {/* Toast 通知 */}
+       <Toaster
+         position="top-center"
+         toastOptions={{
+           duration: 3000,
+           style: {
+             background: '#fef3c7',
+             color: '#92400e',
+             border: '1px solid #f59e0b',
+             borderRadius: '8px',
+             fontFamily: '"Comic Sans MS", cursive',
+             fontSize: '14px',
+           },
+         }}
+       />
     </section>
   );
 };

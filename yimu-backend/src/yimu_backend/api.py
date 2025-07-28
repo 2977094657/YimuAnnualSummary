@@ -358,13 +358,33 @@ async def get_bill_folders():
         logger.error(f"获取账单文件夹列表时发生错误: {str(e)}")
         raise HTTPException(status_code=500, detail=f"获取账单文件夹列表失败: {str(e)}")
 
+@app.get("/api/available-years", summary="获取可用年份", description="获取数据库中存在交易数据的所有年份")
+async def get_available_years():
+    """获取可用年份列表
+
+    Returns:
+        可用年份列表，按降序排列
+    """
+    try:
+        years = analyzer.get_available_years()
+        return {
+            "success": True,
+            "years": years,
+            "total": len(years),
+            "latest": years[0] if years else None,
+            "earliest": years[-1] if years else None
+        }
+    except Exception as e:
+        logger.error(f"获取可用年份时发生错误: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取可用年份失败: {str(e)}")
+
 @app.get("/api/financial-overview", summary="年度财务总览", description="获取年度财务总览数据")
 async def get_financial_overview(year: Optional[int] = None):
     """获取年度财务总览数据
-    
+
     Args:
         year: 指定年份，默认为当前年份
-        
+
     Returns:
         年度财务总览数据
     """
