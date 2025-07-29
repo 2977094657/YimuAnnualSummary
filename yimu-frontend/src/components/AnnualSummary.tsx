@@ -518,7 +518,7 @@ const AnnualSummary: React.FC = () => {
            }}
          >
            <p className="text-base text-gray-700 leading-relaxed">
-             又是小小的冲动消费<img src="/SavedStickers/✏_AgADSUcAAqiycUo.webp" alt="📝" className="w-4 h-4 inline-block ml-1" /><br/>
+             又是小小的冲动消费<img src="/PencilEmoji/✏_AgADSUcAAqiycUo.webp" alt="📝" className="w-4 h-4 inline-block ml-1" /><br/>
              计划总是赶不上变化<br/>
              明天要更理性一些！<br/>
              <span className="text-xs text-gray-500">理财路上的小插曲</span>
@@ -575,7 +575,7 @@ const AnnualSummary: React.FC = () => {
            }}
          >
            <p className="text-base text-gray-700 leading-relaxed">
-             收入到账啦<img src="/SavedStickers/🥳_AgADoEcAAr8SkEs.webp" alt="🎉" className="w-4 h-4 inline-block ml-1" /><br/>
+             收入到账啦<img src="/PencilEmoji/🥳_AgADoEcAAr8SkEs.webp" alt="🎉" className="w-4 h-4 inline-block ml-1" /><br/>
              终于有了盈余<br/>
              这个月收支平衡！<br/>
              <span className="text-xs text-gray-500">财务状况在好转</span>
@@ -632,7 +632,7 @@ const AnnualSummary: React.FC = () => {
            }}
          >
            <p className="text-base text-gray-700 leading-relaxed">
-             理财小目标<img src="/SavedStickers/💰_AgADClAAAmeMcEs.webp" alt="💰" className="w-4 h-4 inline-block ml-1" /><br/>
+             理财小目标<img src="/PencilEmoji/💰_AgADClAAAmeMcEs.webp" alt="💰" className="w-4 h-4 inline-block ml-1" /><br/>
              这个月要控制支出<br/>
              培养好习惯！<br/>
              <span className="text-xs text-gray-500">目标：支出优化20%</span>
@@ -690,8 +690,8 @@ const AnnualSummary: React.FC = () => {
            }}
          >
            <p className="text-base text-gray-700 leading-relaxed">
-             记账让我发现<img src="/SavedStickers/💡_AgAD00wAAovVUEo.webp" alt="💡" className="w-4 h-4 inline-block mr-1" /><br/>
-             钱都花在哪里了<img src="/SavedStickers/💰_AgADClAAAmeMcEs.webp" alt="💸" className="w-4 h-4 inline-block ml-1" /><br/>
+             记账让我发现<img src="/PencilEmoji/💡_AgAD00wAAovVUEo.webp" alt="💡" className="w-4 h-4 inline-block mr-1" /><br/>
+             钱都花在哪里了<img src="/PencilEmoji/💰_AgADClAAAmeMcEs.webp" alt="💸" className="w-4 h-4 inline-block ml-1" /><br/>
              支出分布很有趣！<br/>
              <span className="text-xs text-gray-500">数据分析的意外收获</span>
            </p>
@@ -747,7 +747,7 @@ const AnnualSummary: React.FC = () => {
            }}
          >
            <p className="text-base text-gray-700 leading-relaxed">
-             开始学习理财<img src="/SavedStickers/⬆_AgADjkoAAnEqcEs.webp" alt="📈" className="w-4 h-4 inline-block ml-1" /><br/>
+             开始学习理财<img src="/PencilEmoji/⬆_AgADjkoAAnEqcEs.webp" alt="📈" className="w-4 h-4 inline-block ml-1" /><br/>
              每一分钱都有意义<br/>
              这是个好开始！<br/>
              <span className="text-xs text-gray-500">财富自由的第一步</span>
@@ -795,7 +795,7 @@ const AnnualSummary: React.FC = () => {
          onAnimationComplete={() => console.log('左下角贴纸渲染完成')}
        >
          <img 
-           src="/SavedStickers/🥳_AgADoEcAAr8SkEs.webp" 
+           src="/PencilEmoji/🥳_AgADoEcAAr8SkEs.webp" 
            alt="庆祝贴纸"
            className="w-40 h-40 object-contain"
            onLoad={(e) => {
@@ -819,7 +819,7 @@ const AnnualSummary: React.FC = () => {
          onAnimationComplete={() => console.log('上方贴纸渲染完成')}
        >
          <img 
-           src="/SavedStickers/👍_AgADsk0AAtLogUg.webp" 
+           src="/PencilEmoji/👍_AgADsk0AAtLogUg.webp" 
            alt="点赞贴纸"
            className="w-40 h-40 object-contain"
            onLoad={(e) => {
@@ -843,7 +843,7 @@ const AnnualSummary: React.FC = () => {
          onAnimationComplete={() => console.log('右边贴纸渲染完成')}
        >
          <img 
-           src="/SavedStickers/⭐_AgADrUUAAt3FKEs.webp" 
+           src="/PencilEmoji/⭐_AgADrUUAAt3FKEs.webp" 
            alt="星星贴纸"
            className="w-40 h-40 object-contain"
            onLoad={(e) => {

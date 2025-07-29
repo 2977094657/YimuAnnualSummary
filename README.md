@@ -53,14 +53,7 @@ YimuAnnualSummary/
 
 ## 🚀 快速开始
 
-### 1. 克隆项目
-
-```bash
-git clone <repository-url>
-cd YimuAnnualSummary
-```
-
-### 2. 后端设置
+### 1. 后端设置
 
 ```bash
 # 进入后端目录
@@ -75,7 +68,7 @@ uv run main.py
 
 后端服务将在 `http://localhost:8000` 启动，API 文档可在 `http://localhost:8000/docs` 查看。
 
-### 3. 前端设置
+### 2. 前端设置
 
 ```bash
 # 进入前端目录
@@ -88,7 +81,7 @@ npm install
 npm run tauri dev
 ```
 
-### 4. 构建生产版本
+### 3. 构建生产版本
 
 ```bash
 # 构建桌面应用
@@ -107,6 +100,9 @@ npm run tauri build
 ## 🙏 致谢
 
 - [星夜浪漫宇宙温柔字体](https://font.chinaz.com/22112237387.htm)
+- [EffectEmoji](https://t.me/addemoji/EffectEmoji) - Telegram 动态表情包
+- [PencilEmoji](https://t.me/addemoji/PencilEmoji) - Telegram 手绘表情包  
+- [CuteEmoji](https://t.me/addemoji/CuteEmoji) - Telegram 可爱表情包
 
 ---
 
