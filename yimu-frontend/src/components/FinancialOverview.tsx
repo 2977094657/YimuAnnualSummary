@@ -123,11 +123,178 @@ interface FinancialOverviewProps {
   availableYears: number[];
 }
 
+// 自定义Tooltip组件 - 符合手帐风格
+interface TooltipProps {
+  isVisible: boolean;
+  x: number;
+  y: number;
+  content: string;
+  date: string;
+  hasIncome: boolean;
+  hasExpense: boolean;
+  incomeAmount: number;
+  expenseAmount: number;
+}
+
+const HandwrittenTooltip: React.FC<TooltipProps> = ({
+  isVisible,
+  x,
+  y,
+  content,
+  date,
+  hasIncome,
+  hasExpense,
+  incomeAmount,
+  expenseAmount
+}) => {
+  if (!isVisible) return null;
+
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('zh-CN', {
+      style: 'currency',
+      currency: 'CNY',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  // 根据金额选择对应等级的表情
+  const getExpenseEmoji = (amount: number): string => {
+    if (amount >= 1000) return "/CuteEmoji/😵_AgAD10IAAjMO0Us.webp"; // 4级：高支出
+    if (amount >= 500) return "/CuteEmoji/😭_AgADoEAAAqeSWUs.webp";   // 3级：中高支出
+    if (amount >= 100) return "/CuteEmoji/😮_AgADK0MAAumyWUs.webp";   // 2级：中低支出
+    return "/CuteEmoji/😅_AgADXEYAAhVEWEs.webp";                     // 1级：低支出
+  };
+
+  const getIncomeEmoji = (amount: number): string => {
+    if (amount >= 1000) return "/CuteEmoji/🤑_AgADfUYAAhqM0Us.webp"; // 4级：高收入
+    if (amount >= 500) return "/CuteEmoji/😍_AgADTUYAAhiDYEs.webp";   // 3级：中高收入
+    if (amount >= 100) return "/CuteEmoji/☺_AgAD40MAAn5wWEs.webp";    // 2级：中低收入
+    return "/CuteEmoji/🙂_AgAD7kUAAphlWUs.webp";                     // 1级：低收入
+  };
+
+  return (
+    <div
+      className="fixed pointer-events-none z-[9999] transition-all duration-200 ease-out"
+      style={{
+        left: `${x + 15}px`,
+        top: `${y - 10}px`,
+        transform: 'translateY(-100%)'
+      }}
+    >
+      {/* 胶带装饰 - 顶部 */}
+      <div
+        className="absolute -top-2 left-1/3 w-8 h-3 bg-yellow-200 opacity-80 rotate-12 z-20"
+        style={{
+          clipPath: 'polygon(5% 0%, 95% 10%, 100% 90%, 0% 100%)',
+          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)'
+        }}
+      />
+      
+      {/* 主要提示框 */}
+      <div
+        className="bg-gradient-to-br from-amber-100 to-orange-100 border-2 border-amber-300 p-3 relative max-w-48"
+        style={{
+          clipPath: `polygon(
+            8% 0%, 92% 5%, 100% 15%, 95% 85%,
+            88% 100%, 12% 95%, 0% 25%, 5% 10%
+          )`,
+          filter: 'drop-shadow(3px 4px 8px rgba(0,0,0,0.25))',
+          transform: 'rotate(-1deg)',
+          backgroundColor: 'rgba(255, 248, 220, 0.95)',
+          backgroundImage: `
+            radial-gradient(circle at 20% 30%, rgba(255, 193, 7, 0.2) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(255, 152, 0, 0.15) 0%, transparent 60%)
+          `
+        }}
+      >
+        {/* 日期标题 */}
+        <div className="flex items-center mb-2">
+          <img src="/CuteEmoji/☀_AgADREkAAnguWUs.webp" alt="☀" className="w-4 h-4 mr-2" />
+          <span className="text-sm font-bold text-amber-800" style={{ fontFamily: '"Comic Sans MS", cursive' }}>
+            {date}
+          </span>
+        </div>
+        
+        {/* 交易详情 */}
+        <div className="space-y-1 text-xs">
+          {hasIncome && (
+            <div className="flex items-center text-green-700">
+              <img src={getIncomeEmoji(incomeAmount)} alt="收入表情" className="w-3 h-3 mr-1" />
+              <span className="font-medium">收入：</span>
+              <span className="ml-1 font-bold bg-green-100 px-1 rounded" style={{
+                border: '1px dashed #22c55e',
+                transform: 'rotate(0.5deg)'
+              }}>
+                {formatCurrency(incomeAmount)}
+              </span>
+            </div>
+          )}
+          
+          {hasExpense && (
+            <div className="flex items-center text-red-700">
+              <img src={getExpenseEmoji(expenseAmount)} alt="支出表情" className="w-3 h-3 mr-1" />
+              <span className="font-medium">支出：</span>
+              <span className="ml-1 font-bold bg-red-100 px-1 rounded" style={{
+                border: '1px dashed #ef4444',
+                transform: 'rotate(-0.5deg)'
+              }}>
+                {formatCurrency(expenseAmount)}
+              </span>
+            </div>
+          )}
+          
+          {!hasIncome && !hasExpense && (
+            <div className="flex items-center text-gray-600">
+              <img src="/CuteEmoji/😌_AgADA0cAAgG0WUs.webp" alt="😌" className="w-3 h-3 mr-1" />
+              <span className="italic">今天很平静呢～</span>
+            </div>
+          )}
+        </div>
+        
+        {/* 手绘装饰元素 */}
+        <div className="absolute -top-1 right-2 text-pink-400 text-xs transform rotate-12">★</div>
+        <div className="absolute -bottom-1 left-1 w-4 h-1 bg-blue-300 opacity-40 transform -rotate-3"></div>
+        
+        {/* 小箭头指向热力图格子 */}
+        <div
+          className="absolute w-0 h-0 border-l-4 border-r-4 border-t-6 border-transparent border-t-amber-200"
+          style={{
+            bottom: '-5px',
+            left: '50%',
+            transform: 'translateX(-50%) rotate(2deg)'
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, availableYears }) => {
   const [financialData, setFinancialData] = useState<FinancialData | null>(null);
   const [dailyData, setDailyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tooltip, setTooltip] = useState<{
+    isVisible: boolean;
+    x: number;
+    y: number;
+    content: string;
+    date: string;
+    hasIncome: boolean;
+    hasExpense: boolean;
+    incomeAmount: number;
+    expenseAmount: number;
+  }>({
+    isVisible: false,
+    x: 0,
+    y: 0,
+    content: '',
+    date: '',
+    hasIncome: false,
+    hasExpense: false,
+    incomeAmount: 0,
+    expenseAmount: 0
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -1377,22 +1544,22 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
                      key={`day-${index}`}
                      initial={{ opacity: 0, scale: 0.3 }}
                      animate={{ opacity: 1, scale: 1 }}
-                     transition={{ 
-                       duration: 0.3, 
+                     transition={{
+                       duration: 0.3,
                        delay: 3.5 + (index % 30) * 0.002,
                        ease: "easeOut"
                      }}
                      className="rounded-[2px] relative overflow-hidden cursor-pointer"
-                     style={{ 
+                     style={{
                        width: '16px',
                        height: '16px',
                        backgroundColor: totalAmount > 0 ? '#ffffff' : '#e2e8f0',
                        ...(totalAmount > 1000 && {
-                         backgroundColor: incomeAmount > expenseAmount 
+                         backgroundColor: incomeAmount > expenseAmount
                            ? 'rgba(16, 185, 129, 0.15)'  // 绿色弥散背景 (收入多)
                            : 'rgba(239, 68, 68, 0.15)',  // 红色弥散背景 (支出多)
                          border: '2px solid',
-                         borderImage: incomeAmount > expenseAmount 
+                         borderImage: incomeAmount > expenseAmount
                            ? 'linear-gradient(45deg, #10b981, #eab308, #10b981) 1'  // 绿色到黄色循环 (收入多)
                            : 'linear-gradient(45deg, #ef4444, #000000, #ef4444) 1',  // 红色到黑色循环 (支出多)
                          boxShadow: incomeAmount > expenseAmount
@@ -1404,7 +1571,24 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
                        })
                      }}
                      whileHover={{ scale: 1.5, zIndex: 10 }}
-                     title={`${month+1}月${day}日 ${hasIncome ? `收入: ${formatCurrency(incomeAmount)}` : ''} ${hasExpense ? `支出: ${formatCurrency(expenseAmount)}` : ''} ${!hasIncome && !hasExpense ? '无交易' : ''}`}
+                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                     onMouseEnter={(e) => {
+                       const rect = e.currentTarget.getBoundingClientRect();
+                       setTooltip({
+                         isVisible: true,
+                         x: rect.left + rect.width / 2,
+                         y: rect.top,
+                         content: `${month+1}月${day}日`,
+                         date: `${month+1}月${day}日`,
+                         hasIncome,
+                         hasExpense,
+                         incomeAmount,
+                         expenseAmount
+                       });
+                     }}
+                     onMouseLeave={() => {
+                       setTooltip(prev => ({ ...prev, isVisible: false }));
+                     }}
                    >
                      {/* 收入部分 - 绿色 */}
                      {hasIncome && (
@@ -1607,6 +1791,19 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
          !
        </motion.div>
 
+
+     {/* 自定义手帐风格Tooltip */}
+     <HandwrittenTooltip
+       isVisible={tooltip.isVisible}
+       x={tooltip.x}
+       y={tooltip.y}
+       content={tooltip.content}
+       date={tooltip.date}
+       hasIncome={tooltip.hasIncome}
+       hasExpense={tooltip.hasExpense}
+       incomeAmount={tooltip.incomeAmount}
+       expenseAmount={tooltip.expenseAmount}
+     />
 
     </section>
   );
