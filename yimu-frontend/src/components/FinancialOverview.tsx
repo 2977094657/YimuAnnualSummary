@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 
 // 统一的背景样式 - 手帐剪贴风格
@@ -331,6 +331,20 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
     fetchData();
   }, [selectedYear]);
 
+  // 预计算每日数据Map，提升热力图查找效率
+  const dailyDataMap = useMemo(() => {
+    const map = new Map<string, any>();
+    const list = dailyData?.daily_data as Array<any> | undefined;
+    if (Array.isArray(list)) {
+      for (const item of list) {
+        if (item && typeof item.date === 'string') {
+          map.set(item.date, item);
+        }
+      }
+    }
+    return map;
+  }, [dailyData]);
+
   const fetchFinancialData = async (targetYear?: number) => {
     try {
       setLoading(true);
@@ -360,6 +374,101 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
   const formatPercentage = (rate: number): string => {
     return `${(rate * 100).toFixed(1)}%`;
   };
+
+  // 月份标签（53列）预计算，避免渲染期重复构造 & 修复硬编码年份
+  const monthLabels = useMemo(() => {
+    const labels: string[] = [];
+    const startDate = new Date(selectedYear, 0, 1);
+    const startDayOfWeek = startDate.getDay();
+    for (let weekIndex = 0; weekIndex < 53; weekIndex++) {
+      const weekStartDate = new Date(selectedYear, 0, 1 + weekIndex * 7 - startDayOfWeek);
+      let monthName = '';
+      for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const checkDate = new Date(weekStartDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+        if (checkDate.getFullYear() === selectedYear && checkDate.getDate() === 1) {
+          monthName = `${checkDate.getMonth() + 1}月`;
+          break;
+        }
+      }
+      labels.push(monthName);
+    }
+    return labels;
+  }, [selectedYear]);
+
+  // 热力图网格预计算（53*7）
+  const gridCells = useMemo(() => {
+    const cells: Array<
+      | { isEmpty: true }
+      | {
+          isEmpty: false;
+          month: number;
+          day: number;
+          dateStr: string;
+          incomeAmount: number;
+          expenseAmount: number;
+          totalAmount: number;
+          hasIncome: boolean;
+          hasExpense: boolean;
+          incomeRatio: number;
+          expenseRatio: number;
+        }
+    > = [];
+
+    const startDate = new Date(selectedYear, 0, 1);
+    const startDayOfWeek = startDate.getDay();
+
+    for (let index = 0; index < 53 * 7; index++) {
+      const dayOfWeek = Math.floor(index / 53);
+      const weekIndex = index % 53;
+      const dayOffset = weekIndex * 7 + dayOfWeek - startDayOfWeek;
+      const currentDate = new Date(selectedYear, 0, 1 + dayOffset);
+
+      if (currentDate.getFullYear() !== selectedYear || dayOffset < 0) {
+        cells.push({ isEmpty: true });
+        continue;
+      }
+
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const dayData = dailyDataMap.get(dateStr) || {
+        income: 0,
+        expense: 0,
+        income_count: 0,
+        expense_count: 0,
+      };
+
+      const incomeAmount = dayData.income || 0;
+      const expenseAmount = dayData.expense || 0;
+      const totalAmount = incomeAmount + expenseAmount;
+      const hasIncome = incomeAmount > 0;
+      const hasExpense = expenseAmount > 0;
+      const incomeRatio = totalAmount > 0 ? incomeAmount / totalAmount : 0;
+      const expenseRatio = totalAmount > 0 ? expenseAmount / totalAmount : 0;
+
+      cells.push({
+        isEmpty: false,
+        month: currentDate.getMonth(),
+        day: currentDate.getDate(),
+        dateStr,
+        incomeAmount,
+        expenseAmount,
+        totalAmount,
+        hasIncome,
+        hasExpense,
+        incomeRatio,
+        expenseRatio,
+      });
+    }
+    return cells;
+  }, [selectedYear, dailyDataMap]);
+
+  // 热力图方格动画变体：分别定义初始/入场/悬浮的过渡，避免重复 transition 属性冲突
+  const cellBaseVariants = { opacity: 0, scale: 0.3 } as const;
+  const cellAnimate = (_i: number) => ({ opacity: 1, scale: 1 });
+  const cellHover = {
+    scale: 1.5,
+    zIndex: 10,
+    transition: { type: 'spring', stiffness: 300, damping: 20 },
+  } as const;
 
   if (loading) {
     return (
@@ -527,37 +636,68 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
     }
   ];
 
-  // 新的分析维度卡片数据
+  // 新的分析维度卡片数据（懒加载图像）
   const analysisCards = [
     {
       title: '我的消费时间密码',
-      icon: <img src="/PencilEmoji/☀_AgADREgAAg1PSUs.webp" alt="☀" className="w-6 h-6" />,
+      icon: <img src="/PencilEmoji/☀_AgADREgAAg1PSUs.webp" alt="☀" className="w-6 h-6" loading="lazy" decoding="async" fetchPriority="low" />,
       bgColor: 'from-purple-100 to-violet-200',
       borderColor: 'border-purple-300',
       content: generateTimeAnalysisContent()
     },
     {
       title: '消费行为小画像',
-      icon: <img src="/PencilEmoji/👀_AgAD51QAAjbtiEg.webp" alt="👀" className="w-6 h-6" />,
+      icon: <img src="/PencilEmoji/👀_AgAD51QAAjbtiEg.webp" alt="👀" className="w-6 h-6" loading="lazy" decoding="async" fetchPriority="low" />,
       bgColor: 'from-pink-100 to-rose-200',
       borderColor: 'border-pink-300',
       content: generateBehaviorAnalysisContent()
     },
     {
       title: '财务成长轨迹',
-      icon: <img src="/PencilEmoji/⬆_AgADjkoAAnEqcEs.webp" alt="⬆" className="w-6 h-6" />,
+      icon: <img src="/PencilEmoji/⬆_AgADjkoAAnEqcEs.webp" alt="⬆" className="w-6 h-6" loading="lazy" decoding="async" fetchPriority="low" />,
       bgColor: 'from-green-100 to-emerald-200',
       borderColor: 'border-green-300',
       content: generateGrowthAnalysisContent()
     },
     {
       title: '特殊时刻回忆录',
-      icon: <img src="/PencilEmoji/⭐_AgADrUUAAt3FKEs.webp" alt="⭐" className="w-6 h-6" />,
+      icon: <img src="/PencilEmoji/⭐_AgADrUUAAt3FKEs.webp" alt="⭐" className="w-6 h-6" loading="lazy" decoding="async" fetchPriority="low" />,
       bgColor: 'from-yellow-100 to-amber-200',
       borderColor: 'border-yellow-300',
       content: generateEventsAnalysisContent()
     }
   ];
+
+  // 预计算分析卡片富文本，减少渲染时的replace计算
+  const analysisTopHTML =
+    analysisCards.slice(0, 2).map(card =>
+      card.content.replace(/\*\*(.*?)\*\*/g, (__, p1, offset) => {
+        const colors = ['#7c3aed', '#ec4899', '#10b981', '#f59e0b'];
+        const color = colors[offset % colors.length];
+        const decorations = [
+          `<span style="background: linear-gradient(120deg, ${color}22 0%, ${color}44 100%); padding: 2px 4px; border-radius: 3px; font-weight: bold; position: relative;"><span style="border-bottom: 2px wavy ${color}; text-decoration: underline; text-decoration-color: ${color}; text-decoration-style: wavy;">${p1}</span></span>`,
+          `<span style="background: ${color}33; padding: 1px 3px; border-radius: 50px; font-weight: bold; border: 2px dashed ${color}; position: relative; transform: rotate(${Math.random() > 0.5 ? 1 : -1}deg);">${p1}</span>`,
+          `<span style="background: linear-gradient(45deg, transparent 40%, ${color}77 50%, transparent 60%); font-weight: bold; padding: 2px; position: relative; border-radius: 2px;"><span style="text-shadow: 1px 1px 0px ${color}; filter: brightness(1.1);">${p1}</span></span>`,
+          `<span style="border: 2px solid ${color}; border-radius: 8px; padding: 2px 4px; background: ${color}11; font-weight: bold; position: relative; transform: rotate(${(offset % 3 - 1) * 1.5}deg); display: inline-block; box-shadow: 1px 2px 3px ${color}44;">${p1}</span>`
+        ];
+        return decorations[offset % decorations.length];
+      })
+    );
+
+  const analysisBottomHTML =
+    analysisCards.slice(2, 4).map(card =>
+      card.content.replace(/\*\*(.*?)\*\*/g, (__, p1, offset) => {
+        const colors = ['#7c3aed', '#ec4899', '#10b981', '#f59e0b'];
+        const color = colors[offset % colors.length];
+        const decorations = [
+          `<span style=\"background: ${color}22; padding: 2px 4px; font-weight: bold; position: relative; border-left: 4px solid ${color}; border-radius: 0 4px 4px 0; margin: 0 1px;\">${p1}</span>`,
+          `<span style=\"border: 3px solid ${color}; border-radius: 45% 55% 52% 48%; padding: 2px 6px; background: ${color}15; font-weight: bold; display: inline-block; transform: rotate(${(offset % 2 === 0 ? 3 : -3)}deg); box-shadow: 0 0 8px ${color}44;\">${p1}</span>`,
+          `<span style=\"font-weight: bold; position: relative; color: ${color}; text-shadow: 1px 1px 0px rgba(0,0,0,0.1);\"><span style=\"border-bottom: 3px double ${color}; padding-bottom: 1px;\">${p1}</span></span>`,
+          `<span style=\"background: linear-gradient(135deg, ${color}33, ${color}55); padding: 2px 4px; font-weight: bold; border-radius: 6px; position: relative; box-shadow: 0 1px 3px ${color}66;\"><span style=\"color: ${color};\">${p1}</span><span style=\"position: absolute; top: -6px; left: -4px; color: ${color}; font-size: 8px;\">★</span></span>`
+        ];
+        return decorations[offset % decorations.length];
+      })
+    );
 
   // 生成多维度财务分析总结
   const generateInsights = () => {
@@ -652,6 +792,55 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
 
   const insights = generateInsights();
 
+  // 预计算洞察富文本，避免每次渲染进行多次正则与字符串操作
+  const insightsHTML =
+    insights.map((insight) =>
+      insight.replace(/\*\*(.*?)\*\*/g, (_, p1, offset, str) => {
+        const isIncome = /收入|获得|进账/.test(p1) || /收入|获得|进账/.test(str.substring(Math.max(0, offset - 20), offset + 20));
+        const isExpense = /支出|消费|花费|购买/.test(p1) || /支出|消费|花费|购买/.test(str.substring(Math.max(0, offset - 20), offset + 20));
+        const isHighestExpense = /最高.*支出/.test(str) && /¥/.test(p1);
+        const isHappiness = /小确幸/.test(p1) || (/收获了/.test(str.substring(Math.max(0, offset - 10), offset)) && /小确幸/.test(str.substring(offset, offset + 20)));
+        const isSpending = /花掉/.test(str.substring(Math.max(0, offset - 10), offset)) && /¥/.test(p1);
+        const isMaxIncome = /收到/.test(str.substring(Math.max(0, offset - 10), offset)) && /¥/.test(p1) && (/最大|最多|最高/.test(str) || /惊喜/.test(str));
+
+        let colors: string[];
+        if (isHappiness) {
+          colors = ['#22c55e', '#16a34a', '#15803d', '#166534'];
+        } else if (isSpending) {
+          colors = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b'];
+        } else if (isMaxIncome) {
+          colors = ['#22c55e', '#eab308', '#f59e0b', '#d97706'];
+        } else if (isIncome) {
+          colors = ['#22c55e', '#16a34a', '#15803d', '#166534'];
+        } else if (isExpense || isHighestExpense) {
+          colors = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b'];
+        } else {
+          colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#fd79a8', '#6c5ce7', '#a29bfe'];
+        }
+
+        if (isMaxIncome) {
+          return `<span style="background: linear-gradient(90deg, #22c55e 0%, #eab308 25%, #f59e0b 50%, #d97706 75%, #22c55e 100%); background-size: 200% 100%; animation: flowGradient 3s ease-in-out infinite; padding: 3px 6px; border-radius: 8px; font-weight: bold; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); display: inline-block; transform: rotate(${(offset % 2 === 0 ? 2 : -2)}deg); box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);">${p1}</span><style>@keyframes flowGradient { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }</style>`;
+        }
+
+        const decorations = [
+          `<span style=\"background: linear-gradient(120deg, ${colors[offset % colors.length]}22 0%, ${colors[offset % colors.length]}44 100%); padding: 2px 4px; border-radius: 3px; font-weight: bold; position: relative; box-shadow: 0 2px 4px ${colors[offset % colors.length]}33;\"><span style=\"border-bottom: 2px wavy ${colors[offset % colors.length]}; text-decoration: underline; text-decoration-color: ${colors[offset % colors.length]}; text-decoration-style: wavy;\">${p1}</span></span>`,
+          `<span style=\"background: ${colors[offset % colors.length]}33; padding: 1px 3px; border-radius: 50px; font-weight: bold; border: 2px dashed ${colors[offset % colors.length]}; position: relative; transform: rotate(${Math.random() > 0.5 ? 1 : -1}deg);\">${p1}</span>`,
+          `<span style=\"background: linear-gradient(45deg, transparent 40%, ${colors[offset % colors.length]}77 50%, transparent 60%); font-weight: bold; padding: 2px; position: relative; border-radius: 2px;\"><span style=\"text-shadow: 1px 1px 0px ${colors[offset % colors.length]}; filter: brightness(1.1);\">${p1}</span></span>`,
+          `<span style=\"border: 2px solid ${colors[offset % colors.length]}; border-radius: 8px; padding: 2px 4px; background: ${colors[offset % colors.length]}11; font-weight: bold; position: relative; transform: rotate(${(offset % 3 - 1) * 1.5}deg); display: inline-block; box-shadow: 1px 2px 3px ${colors[offset % colors.length]}44;\">${p1}</span>`,
+          `<span style=\"background: ${colors[offset % colors.length]}22; padding: 2px 4px; font-weight: bold; position: relative; border-left: 4px solid ${colors[offset % colors.length]}; border-radius: 0 4px 4px 0; margin: 0 1px;\">${p1}</span>`,
+          `${/最高.*支出/.test(str) && /¥/.test(p1) ?
+            `<span style=\"border: 3px solid #ef4444; border-radius: 45% 55% 52% 48%; padding: 2px 6px; background: #ef444415; font-weight: bold; display: inline-block; transform: rotate(${(offset % 2 === 0 ? 3 : -3)}deg); box-shadow: 0 0 8px #ef444444;\">${p1}</span>` :
+            `<span style=\"border: 3px solid ${colors[offset % colors.length]}; border-radius: 50px; padding: 1px 6px; background: ${colors[offset % colors.length]}15; font-weight: bold; display: inline-block; transform: rotate(${(offset % 2 === 0 ? 2 : -2)}deg);\">${p1}</span>`
+          }`,
+          `<span style=\"font-weight: bold; position: relative; color: ${colors[offset % colors.length]}; text-shadow: 1px 1px 0px rgba(0,0,0,0.1);\"><span style=\"border-bottom: 3px double ${colors[offset % colors.length]}; padding-bottom: 1px;\">${p1}</span></span>`,
+          `<span style=\"background: ${colors[offset % colors.length]}25; padding: 2px 4px; font-weight: bold; border-radius: 4px; position: relative; margin: 0 2px;\"><span style=\"color: ${colors[offset % colors.length]};\">${p1}</span><span style=\"position: absolute; top: -8px; right: -8px; color: ${colors[offset % colors.length]}; font-size: 12px; transform: rotate(${isIncome ? '-45deg' : isExpense ? '135deg' : '45deg'});\">${isIncome ? '↗' : isExpense ? '↘' : '↗'}</span></span>`,
+          `<span style=\"background: linear-gradient(135deg, ${colors[offset % colors.length]}33, ${colors[offset % colors.length]}55); padding: 2px 4px; font-weight: bold; border-radius: 6px; position: relative; box-shadow: 0 1px 3px ${colors[offset % colors.length]}66;\"><span style=\"color: ${colors[offset % colors.length]};\">${p1}</span><span style=\"position: absolute; top: -6px; left: -4px; color: ${colors[offset % colors.length]}; font-size: 8px;\">★</span></span>`,
+          `<span style=\"border: 2px solid ${colors[offset % colors.length]}; padding: 1px 3px; font-weight: bold; background: ${colors[offset % colors.length]}18; position: relative; display: inline-block; transform: skew(-2deg) rotate(${(offset % 2 === 0 ? 1 : -1)}deg); border-radius: 3px 8px 3px 8px;\">${p1}</span>`
+        ];
+        return decorations[offset % decorations.length];
+      })
+    );
+
   return (
     <section className="h-screen relative overflow-visible" style={UNIFIED_BACKGROUND}>
       {/* 纸质背景纹理 */}
@@ -663,6 +852,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
         animate={{ opacity: 1, scale: 1, rotate: -3 }}
         transition={{ duration: 1, delay: 1.5, ease: "easeOut" }}
         className="absolute top-8 right-24 z-50"
+        style={{ willChange: 'transform, opacity' }}
       >
         <div className="relative">
           {/* 便签纸背景 */}
@@ -778,6 +968,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
         animate={{ opacity: 1, x: 0, rotate: -3 }}
         transition={{ duration: 1, delay: 1.2, ease: "easeOut" }}
         className="absolute top-8 left-[480px] z-50 w-[600px]"
+        style={{ willChange: 'transform, opacity' }}
       >
         {/* 胶带装饰 - 右下角 */}
         <div className="absolute -bottom-4 right-6 w-12 h-5 bg-orange-200 opacity-70 -rotate-20 z-10"
@@ -849,23 +1040,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
                     </>
                   )}
 
-                  <span dangerouslySetInnerHTML={{
-                    __html: card.content.replace(/\*\*(.*?)\*\*/g, (match, p1, offset) => {
-                      const colors = ['#7c3aed', '#ec4899', '#10b981', '#f59e0b'];
-                      const color = colors[offset % colors.length];
-                      const decorations = [
-                        // 波浪下划线
-                        `<span style="background: linear-gradient(120deg, ${color}22 0%, ${color}44 100%); padding: 2px 4px; border-radius: 3px; font-weight: bold; position: relative;"><span style="border-bottom: 2px wavy ${color}; text-decoration: underline; text-decoration-color: ${color}; text-decoration-style: wavy;">${p1}</span></span>`,
-                        // 虚线边框
-                        `<span style="background: ${color}33; padding: 1px 3px; border-radius: 50px; font-weight: bold; border: 2px dashed ${color}; position: relative; transform: rotate(${Math.random() > 0.5 ? 1 : -1}deg);">${p1}</span>`,
-                        // 荧光笔效果
-                        `<span style="background: linear-gradient(45deg, transparent 40%, ${color}77 50%, transparent 60%); font-weight: bold; padding: 2px; position: relative; border-radius: 2px;"><span style="text-shadow: 1px 1px 0px ${color}; filter: brightness(1.1);">${p1}</span></span>`,
-                        // 手写框框
-                        `<span style="border: 2px solid ${color}; border-radius: 8px; padding: 2px 4px; background: ${color}11; font-weight: bold; position: relative; transform: rotate(${(offset % 3 - 1) * 1.5}deg); display: inline-block; box-shadow: 1px 2px 3px ${color}44;">${p1}</span>`
-                      ];
-                      return decorations[offset % decorations.length];
-                    })
-                  }} />
+                  <span dangerouslySetInnerHTML={{ __html: analysisTopHTML[index] }} />
                 </div>
               </motion.div>
             ))}
@@ -950,23 +1125,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
                     </>
                   )}
 
-                  <span dangerouslySetInnerHTML={{
-                    __html: card.content.replace(/\*\*(.*?)\*\*/g, (match, p1, offset) => {
-                      const colors = ['#7c3aed', '#ec4899', '#10b981', '#f59e0b'];
-                      const color = colors[offset % colors.length];
-                      const decorations = [
-                        // 左侧标记条
-                        `<span style="background: ${color}22; padding: 2px 4px; font-weight: bold; position: relative; border-left: 4px solid ${color}; border-radius: 0 4px 4px 0; margin: 0 1px;">${p1}</span>`,
-                        // 不规则圆圈包围
-                        `<span style="border: 3px solid ${color}; border-radius: 45% 55% 52% 48%; padding: 2px 6px; background: ${color}15; font-weight: bold; display: inline-block; transform: rotate(${(offset % 2 === 0 ? 3 : -3)}deg); box-shadow: 0 0 8px ${color}44;">${p1}</span>`,
-                        // 双重下划线
-                        `<span style="font-weight: bold; position: relative; color: ${color}; text-shadow: 1px 1px 0px rgba(0,0,0,0.1);"><span style="border-bottom: 3px double ${color}; padding-bottom: 1px;">${p1}</span></span>`,
-                        // 星星装饰
-                        `<span style="background: linear-gradient(135deg, ${color}33, ${color}55); padding: 2px 4px; font-weight: bold; border-radius: 6px; position: relative; box-shadow: 0 1px 3px ${color}66;"><span style="color: ${color};">${p1}</span><span style="position: absolute; top: -6px; left: -4px; color: ${color}; font-size: 8px;">★</span></span>`
-                      ];
-                      return decorations[offset % decorations.length];
-                    })
-                  }} />
+                  <span dangerouslySetInnerHTML={{ __html: analysisBottomHTML[index] }} />
                 </div>
               </motion.div>
             ))}
@@ -1105,6 +1264,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
         animate={{ opacity: 1, x: 0, rotate: 5 }}
         transition={{ duration: 1, delay: 1.5, ease: "easeOut" }}
         className="absolute top-20 right-16 z-50 w-80 h-[750px]"
+        style={{ willChange: 'transform, opacity' }}
       >
         {/* 移除左上角胶带装饰 */}
         
@@ -1128,9 +1288,9 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
           }}
         >
           
-          <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center"><img src="/PencilEmoji/💖_AgADlVUAAltsiEg.webp" alt="💝" className="w-7 h-7 mr-2" /> 今年的财务小结</h3>
+          <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center"><img src="/PencilEmoji/💖_AgADlVUAAltsiEg.webp" alt="💝" className="w-7 h-7 mr-2" loading="lazy" decoding="async" fetchPriority="low" /> 今年的财务小结</h3>
           <div className="space-y-1 max-h-[680px]">
-            {insights.map((insight, index) => (
+            {insights.map((_, index) => (
               <div key={index} className="relative">
                 {/* 手绘装饰元素 - 在外层避免被clip-path裁剪 */}
                 {index === 0 && (
@@ -1184,65 +1344,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
                   }}
                 >
                   {/* 内容区域 */}
-                <span dangerouslySetInnerHTML={{ 
-                   __html: insight
-                     .replace(/\*\*(.*?)\*\*/g, (match, p1, offset, string) => {
-                       // 根据内容判断是收入还是支出，选择对应颜色
-                       const isIncome = /收入|获得|进账/.test(p1) || /收入|获得|进账/.test(string.substring(Math.max(0, offset - 20), offset + 20));
-                       const isExpense = /支出|消费|花费|购买/.test(p1) || /支出|消费|花费|购买/.test(string.substring(Math.max(0, offset - 20), offset + 20));
-                       const isHighestExpense = /最高.*支出/.test(string) && /¥/.test(p1);
-                       // 新增：检测"收获了xx小确幸"、"花掉xx"和"收到最多钱"的特定模式
-                       const isHappiness = /小确幸/.test(p1) || (/收获了/.test(string.substring(Math.max(0, offset - 10), offset)) && /小确幸/.test(string.substring(offset, offset + 20)));
-                       const isSpending = /花掉/.test(string.substring(Math.max(0, offset - 10), offset)) && /¥/.test(p1);
-                       const isMaxIncome = /收到/.test(string.substring(Math.max(0, offset - 10), offset)) && /¥/.test(p1) && (/最大|最多|最高/.test(string) || /惊喜/.test(string));
-                       
-                       let colors;
-                       if (isHappiness) {
-                         colors = ['#22c55e', '#16a34a', '#15803d', '#166534']; // 绿色系 - 专门为小确幸
-                       } else if (isSpending) {
-                         colors = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b']; // 红色系 - 专门为花掉
-                       } else if (isMaxIncome) {
-                         colors = ['#22c55e', '#eab308', '#f59e0b', '#d97706']; // 绿色向黄色渐变 - 专门为收到最多钱
-                       } else if (isIncome) {
-                         colors = ['#22c55e', '#16a34a', '#15803d', '#166534']; // 绿色系
-                       } else if (isExpense || isHighestExpense) {
-                         colors = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b']; // 红色系
-                       } else {
-                         colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#fd79a8', '#6c5ce7', '#a29bfe'];
-                       }
-                       
-                       // 为收到最多钱特殊处理绿色向黄色流动渐变
-                       if (isMaxIncome) {
-                         return `<span style="background: linear-gradient(90deg, #22c55e 0%, #eab308 25%, #f59e0b 50%, #d97706 75%, #22c55e 100%); background-size: 200% 100%; animation: flowGradient 3s ease-in-out infinite; padding: 3px 6px; border-radius: 8px; font-weight: bold; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); display: inline-block; transform: rotate(${(offset % 2 === 0 ? 2 : -2)}deg); box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);">${p1}</span><style>@keyframes flowGradient { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }</style>`;
-                       }
-                       
-                       const decorations = [
-                         // 波浪下划线 + 高亮背景
-                         `<span style="background: linear-gradient(120deg, ${colors[offset % colors.length]}22 0%, ${colors[offset % colors.length]}44 100%); padding: 2px 4px; border-radius: 3px; font-weight: bold; position: relative; box-shadow: 0 2px 4px ${colors[offset % colors.length]}33;"><span style="border-bottom: 2px wavy ${colors[offset % colors.length]}; text-decoration: underline; text-decoration-color: ${colors[offset % colors.length]}; text-decoration-style: wavy;">${p1}</span></span>`,
-                         // 圆角边框 + 虚线
-                         `<span style="background: ${colors[offset % colors.length]}33; padding: 1px 3px; border-radius: 50px; font-weight: bold; border: 2px dashed ${colors[offset % colors.length]}; position: relative; transform: rotate(${Math.random() > 0.5 ? 1 : -1}deg);">${p1}</span>`,
-                         // 荧光笔效果
-                         `<span style="background: linear-gradient(45deg, transparent 40%, ${colors[offset % colors.length]}77 50%, transparent 60%); font-weight: bold; padding: 2px; position: relative; border-radius: 2px;"><span style="text-shadow: 1px 1px 0px ${colors[offset % colors.length]}; filter: brightness(1.1);">${p1}</span></span>`,
-                         // 手写框框
-                         `<span style="border: 2px solid ${colors[offset % colors.length]}; border-radius: 8px; padding: 2px 4px; background: ${colors[offset % colors.length]}11; font-weight: bold; position: relative; transform: rotate(${(offset % 3 - 1) * 1.5}deg); display: inline-block; box-shadow: 1px 2px 3px ${colors[offset % colors.length]}44;">${p1}</span>`,
-                         // 左侧标记条
-                         `<span style="background: ${colors[offset % colors.length]}22; padding: 2px 4px; font-weight: bold; position: relative; border-left: 4px solid ${colors[offset % colors.length]}; border-radius: 0 4px 4px 0; margin: 0 1px;">${p1}</span>`,
-                         // 不规则圆圈包围 (特别为最高支出设计)
-                         isHighestExpense ? 
-                           `<span style="border: 3px solid #ef4444; border-radius: 45% 55% 52% 48%; padding: 2px 6px; background: #ef444415; font-weight: bold; display: inline-block; transform: rotate(${(offset % 2 === 0 ? 3 : -3)}deg); box-shadow: 0 0 8px #ef444444;">${p1}</span>` :
-                           `<span style="border: 3px solid ${colors[offset % colors.length]}; border-radius: 50px; padding: 1px 6px; background: ${colors[offset % colors.length]}15; font-weight: bold; display: inline-block; transform: rotate(${(offset % 2 === 0 ? 2 : -2)}deg);">${p1}</span>`,
-                         // 双重下划线
-                         `<span style="font-weight: bold; position: relative; color: ${colors[offset % colors.length]}; text-shadow: 1px 1px 0px rgba(0,0,0,0.1);"><span style="border-bottom: 3px double ${colors[offset % colors.length]}; padding-bottom: 1px;">${p1}</span></span>`,
-                         // 手写箭头指向 (收入向上，支出向下)
-                         `<span style="background: ${colors[offset % colors.length]}25; padding: 2px 4px; font-weight: bold; border-radius: 4px; position: relative; margin: 0 2px;"><span style="color: ${colors[offset % colors.length]};">${p1}</span><span style="position: absolute; top: -8px; right: -8px; color: ${colors[offset % colors.length]}; font-size: 12px; transform: rotate(${isIncome ? '-45deg' : isExpense ? '135deg' : '45deg'});">${isIncome ? '↗' : isExpense ? '↘' : '↗'}</span></span>`,
-                         // 星星装饰
-                         `<span style="background: linear-gradient(135deg, ${colors[offset % colors.length]}33, ${colors[offset % colors.length]}55); padding: 2px 4px; font-weight: bold; border-radius: 6px; position: relative; box-shadow: 0 1px 3px ${colors[offset % colors.length]}66;"><span style="color: ${colors[offset % colors.length]};">${p1}</span><span style="position: absolute; top: -6px; left: -4px; color: ${colors[offset % colors.length]}; font-size: 8px;">★</span></span>`,
-                         // 手绘感边框
-                         `<span style="border: 2px solid ${colors[offset % colors.length]}; padding: 1px 3px; font-weight: bold; background: ${colors[offset % colors.length]}18; position: relative; display: inline-block; transform: skew(-2deg) rotate(${(offset % 2 === 0 ? 1 : -1)}deg); border-radius: 3px 8px 3px 8px;">${p1}</span>`
-                       ];
-                       return decorations[offset % decorations.length];
-                     })
-                 }} />
+                <span dangerouslySetInnerHTML={{ __html: insightsHTML[index] }} />
                 </motion.div>
               </div>
               ))}
@@ -1392,6 +1494,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
          animate={{ opacity: 1, y: 0 }}
          transition={{ duration: 1, delay: 3.5, ease: "easeOut" }}
          className="absolute top-1/4 left-1/8 transform -translate-x-1/8 -translate-y-1/2 z-20 rotate-1"
+          style={{ willChange: 'transform, opacity' }}
        >
          {/* 胶带装饰 - 只保留顶部 */}
           <div className="absolute -top-3 left-1/4 w-1/2 h-6 bg-yellow-100 opacity-80 rotate-1 z-20"
@@ -1414,6 +1517,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
              src="/stickers/油画风格钱币.png" 
              alt="钱币贴纸"
              className="w-40 h-40 object-contain"
+              loading="lazy" decoding="async" fetchPriority="low"
              onLoad={(e) => {
                const img = e.target as HTMLImageElement;
                console.log('热力图贴纸加载完成:', img.naturalWidth, 'x', img.naturalHeight);
@@ -1438,7 +1542,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
            }}
          >
            
-           <h4 className="text-lg font-semibold text-gray-700 mb-6 text-center flex items-center justify-center"><img src="/PencilEmoji/🔥_AgADg0wAAi7eSUs.webp" alt="🔥" className="w-6 h-6 mr-2" /> {selectedYear}年度财务热力图</h4>
+            <h4 className="text-lg font-semibold text-gray-700 mb-6 text-center flex items-center justify-center"><img src="/PencilEmoji/🔥_AgADg0wAAi7eSUs.webp" alt="🔥" className="w-6 h-6 mr-2" loading="lazy" decoding="async" fetchPriority="low" /> {selectedYear}年度财务热力图</h4>
            
            {/* 月份标签 - 与热力图列对应 */}
            <div className="flex mb-2" style={{ marginLeft: '24px' }}>
@@ -1446,30 +1550,11 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
              <div className="mr-2" style={{ width: '30px' }}></div>
              {/* 月份标签网格 */}
              <div className="grid text-xs text-gray-500" style={{ gridTemplateColumns: 'repeat(53, 1fr)', width: '900px', gap: '3px' }}>
-               {Array.from({ length: 53 }, (_, weekIndex) => {
-                 // 2025年1月1日是星期三(3)
-                 const startDate = new Date(2025, 0, 1);
-                 const startDayOfWeek = startDate.getDay(); // 0=周日, 1=周一, ..., 6=周六
-                 
-                 // 计算这一周的第一天（周日）的日期
-                 const weekStartDate = new Date(2025, 0, 1 + weekIndex * 7 - startDayOfWeek);
-                 
-                 // 检查这一周是否包含某个月的第一天
-                 let monthName = '';
-                 for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-                   const checkDate = new Date(weekStartDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
-                   if (checkDate.getFullYear() === 2025 && checkDate.getDate() === 1) {
-                     monthName = `${checkDate.getMonth() + 1}月`;
-                     break;
-                   }
-                 }
-                 
-                 return (
+                {monthLabels.map((name, weekIndex) => (
                    <div key={weekIndex} className="text-center" style={{ width: '16px' }}>
-                     {monthName}
+                    {name}
                    </div>
-                 );
-               })}
+                ))}
              </div>
            </div>
            
@@ -1490,22 +1575,8 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
                
                {/* 热力图网格 */}
                <div className="grid p-3" style={{ gridTemplateColumns: 'repeat(53, 1fr)', gridTemplateRows: 'repeat(7, 1fr)', height: '180px', width: '900px', gap: '3px' }}>
-                 {/* 生成365天的热力格子 - 标准热力图布局 */}
-                 {Array.from({ length: 53 * 7 }, (_, index) => {
-                   // 计算当前格子对应的周和星期
-                   const dayOfWeek = Math.floor(index / 53); // 星期几 (0=周日, 1=周一, ..., 6=周六)
-                   const weekIndex = index % 53; // 第几周 (0-52)
-                   
-                   // 计算年份的1月1日是星期几
-                   const startDate = new Date(selectedYear, 0, 1);
-                   const startDayOfWeek = startDate.getDay(); // 0=周日, 1=周一, ..., 6=周六
-                   
-                   // 计算实际日期
-                   const dayOffset = weekIndex * 7 + dayOfWeek - startDayOfWeek;
-                   const currentDate = new Date(selectedYear, 0, 1 + dayOffset);
-                   
-                   // 如果超出当前年份范围或日期无效，返回空格子
-                   if (currentDate.getFullYear() !== selectedYear || dayOffset < 0) {
+                  {gridCells.map((cell, index) => {
+                    if ((cell as any).isEmpty) {
                      return (
                        <div 
                          key={`empty-${index}`}
@@ -1514,114 +1585,95 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
                        />
                      );
                    }
-                 
-                 const month = currentDate.getMonth();
-                 const day = currentDate.getDate();
-                 const dateStr = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD格式
-                 
-                 // 从后端数据中查找当天的交易数据
-                 const dayData = dailyData?.daily_data?.find((d: any) => d.date === dateStr) || {
-                   income: 0,
-                   expense: 0,
-                   income_count: 0,
-                   expense_count: 0
-                 };
-                 
-                 // 数据已正确获取和匹配
-                 
-                 const incomeAmount = dayData.income || 0;
-                 const expenseAmount = dayData.expense || 0;
-                 const totalAmount = incomeAmount + expenseAmount;
-                 const hasIncome = incomeAmount > 0;
-                 const hasExpense = expenseAmount > 0;
-                 
-                 // 计算收入和支出的比例
-                 const incomeRatio = totalAmount > 0 ? incomeAmount / totalAmount : 0;
-                 const expenseRatio = totalAmount > 0 ? expenseAmount / totalAmount : 0;
+                    const {
+                      month,
+                      day,
+                      incomeAmount,
+                      expenseAmount,
+                      totalAmount,
+                      hasIncome,
+                      hasExpense,
+                      incomeRatio,
+                      expenseRatio,
+                    } = cell as any;
                  
                  return (
                    <motion.div
                      key={`day-${index}`}
-                     initial={{ opacity: 0, scale: 0.3 }}
-                     animate={{ opacity: 1, scale: 1 }}
-                     transition={{
-                       duration: 0.3,
-                       delay: 3.5 + (index % 30) * 0.002,
-                       ease: "easeOut"
-                     }}
+                       custom={index}
+                       initial={cellBaseVariants}
+                       animate={cellAnimate(index)}
+                       transition={{ opacity: { duration: 0.3, delay: 3.5 + (index % 30) * 0.002 } }}
+                       whileHover={cellHover}
                      className="rounded-[2px] relative overflow-hidden cursor-pointer"
                      style={{
                        width: '16px',
                        height: '16px',
                        backgroundColor: totalAmount > 0 ? '#ffffff' : '#e2e8f0',
                        ...(totalAmount > 1000 && {
-                         backgroundColor: incomeAmount > expenseAmount
-                           ? 'rgba(16, 185, 129, 0.15)'  // 绿色弥散背景 (收入多)
-                           : 'rgba(239, 68, 68, 0.15)',  // 红色弥散背景 (支出多)
+                            backgroundColor:
+                              incomeAmount > expenseAmount
+                                ? 'rgba(16, 185, 129, 0.15)'
+                                : 'rgba(239, 68, 68, 0.15)',
                          border: '2px solid',
-                         borderImage: incomeAmount > expenseAmount
-                           ? 'linear-gradient(45deg, #10b981, #eab308, #10b981) 1'  // 绿色到黄色循环 (收入多)
-                           : 'linear-gradient(45deg, #ef4444, #000000, #ef4444) 1',  // 红色到黑色循环 (支出多)
-                         boxShadow: incomeAmount > expenseAmount
-                           ? '0 0 8px rgba(16, 185, 129, 0.6), 0 0 12px rgba(234, 179, 8, 0.4)'  // 绿黄弥散阴影
-                           : '0 0 8px rgba(239, 68, 68, 0.6), 0 0 12px rgba(0, 0, 0, 0.3)',      // 红黑弥散阴影
-                         animation: incomeAmount > expenseAmount
+                            borderImage:
+                              incomeAmount > expenseAmount
+                                ? 'linear-gradient(45deg, #10b981, #eab308, #10b981) 1'
+                                : 'linear-gradient(45deg, #ef4444, #000000, #ef4444) 1',
+                            boxShadow:
+                              incomeAmount > expenseAmount
+                                ? '0 0 8px rgba(16, 185, 129, 0.6), 0 0 12px rgba(234, 179, 8, 0.4)'
+                                : '0 0 8px rgba(239, 68, 68, 0.6), 0 0 12px rgba(0, 0, 0, 0.3)',
+                            animation:
+                              incomeAmount > expenseAmount
                            ? 'pulseGreen 2s ease-in-out infinite'
-                           : 'pulseRed 2s ease-in-out infinite'
-                       })
+                                : 'pulseRed 2s ease-in-out infinite',
+                          }),
                      }}
-                     whileHover={{ scale: 1.5, zIndex: 10 }}
-                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                         
                      onMouseEnter={(e) => {
                        const rect = e.currentTarget.getBoundingClientRect();
                        setTooltip({
                          isVisible: true,
                          x: rect.left + rect.width / 2,
                          y: rect.top,
-                         content: `${month+1}月${day}日`,
-                         date: `${month+1}月${day}日`,
+                            content: `${month + 1}月${day}日`,
+                            date: `${month + 1}月${day}日`,
                          hasIncome,
                          hasExpense,
                          incomeAmount,
-                         expenseAmount
+                            expenseAmount,
                        });
                      }}
                      onMouseLeave={() => {
-                       setTooltip(prev => ({ ...prev, isVisible: false }));
+                          setTooltip((prev) => ({ ...prev, isVisible: false }));
                      }}
                    >
-                     {/* 收入部分 - 绿色 */}
                      {hasIncome && (
                        <div 
                          className="absolute top-0 left-0 bg-green-400"
                          style={{
                            width: '100%',
                            height: `${incomeRatio * 100}%`,
-                           opacity: 0.8
+                              opacity: 0.8,
                          }}
                        />
                      )}
-                     
-                     {/* 支出部分 - 红色 */}
                      {hasExpense && (
                        <div 
                          className="absolute bottom-0 left-0 bg-red-400"
                          style={{
                            width: '100%',
                            height: `${expenseRatio * 100}%`,
-                           opacity: 0.8
+                              opacity: 0.8,
                          }}
                        />
                      )}
-                     
-                     {/* 月初显示日期数字 */}
                      {day === 1 && (
                        <div className="absolute inset-0 flex items-center justify-center z-10">
-                         <span className="text-[8px] font-bold text-gray-800 drop-shadow-sm">{month+1}</span>
+                            <span className="text-[8px] font-bold text-gray-800 drop-shadow-sm">{month + 1}</span>
                        </div>
                      )}
-                     
-
                    </motion.div>
                  );
                })}
