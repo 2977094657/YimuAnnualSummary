@@ -5,29 +5,35 @@ import toast, { Toaster } from 'react-hot-toast';
 
 // 移除不再需要的接口定义和常量
 
-// 统一的背景样式 - 手帐剪贴风格
+// 统一的背景样式 - 手帐剪贴风格（优化版）
 const UNIFIED_BACKGROUND = {
   background: `
-    radial-gradient(circle at 15% 85%, rgba(254, 240, 238, 0.3) 0%, transparent 70%),
-    radial-gradient(circle at 85% 15%, rgba(253, 246, 178, 0.3) 0%, transparent 70%),
-    radial-gradient(circle at 15% 15%, rgba(219, 234, 254, 0.3) 0%, transparent 70%),
-    radial-gradient(circle at 85% 85%, rgba(240, 253, 244, 0.3) 0%, transparent 70%),
-    radial-gradient(circle at 50% 50%, rgba(253, 230, 138, 0.2) 0%, transparent 80%),
-    linear-gradient(135deg, 
-      #f8fafc 0%, 
-      #fef3f2 15%, 
-      #fefce8 30%, 
-      #eff6ff 45%, 
-      #f0fdf4 60%, 
-      #fef3f2 75%, 
-      #f8fafc 100%
+    radial-gradient(ellipse at 20% 80%, rgba(255, 228, 225, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(255, 250, 205, 0.35) 0%, transparent 50%),
+    radial-gradient(ellipse at 10% 20%, rgba(230, 240, 255, 0.35) 0%, transparent 45%),
+    radial-gradient(ellipse at 90% 80%, rgba(240, 255, 244, 0.3) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(255, 248, 220, 0.25) 0%, transparent 60%),
+    linear-gradient(160deg,
+      #fdfcfb 0%,
+      #fff5f3 12%,
+      #fffbeb 28%,
+      #f0f7ff 45%,
+      #f5fff7 62%,
+      #fff8f5 78%,
+      #fdfcfb 100%
     )
   `
 };
 
-// 纸质背景纹理样式
+// SVG 噪点纹理 - 增加纸张质感
+const NOISE_TEXTURE = {
+  backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+  opacity: 0.035
+};
+
+// 纸质背景纹理样式 - 细腻纤维感
 const PAPER_TEXTURE = {
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cg fill='%23000000' fill-opacity='0.4'%3E%3Cpolygon points='20,15 15,20 5,20 0,15 0,5 5,0 15,0 20,5'/%3E%3C/g%3E%3C/svg%3E")`,
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-opacity='0.03'%3E%3Ccircle fill='%23000' cx='25' cy='25' r='0.5'/%3E%3Ccircle fill='%23000' cx='75' cy='75' r='0.4'/%3E%3Ccircle fill='%23000' cx='50' cy='10' r='0.3'/%3E%3Ccircle fill='%23000' cx='10' cy='60' r='0.5'/%3E%3Ccircle fill='%23000' cx='90' cy='40' r='0.4'/%3E%3Ccircle fill='%23000' cx='35' cy='80' r='0.3'/%3E%3Ccircle fill='%23000' cx='65' cy='30' r='0.4'/%3E%3Ccircle fill='%23000' cx='15' cy='90' r='0.3'/%3E%3Ccircle fill='%23000' cx='85' cy='5' r='0.5'/%3E%3Ccircle fill='%23000' cx='45' cy='55' r='0.3'/%3E%3C/g%3E%3C/svg%3E")`,
   zIndex: 1
 };
 

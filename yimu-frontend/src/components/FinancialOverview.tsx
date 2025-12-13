@@ -517,17 +517,17 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
     let content = "";
 
     if (timeData.peak_hour?.hour !== null && timeData.peak_hour?.hour !== undefined) {
-      content += `最爱在 **${timeData.peak_hour.hour}:00** 买买买 <img src="/EffectEmoji/🏃_AgADUUoAAux4cEg.gif" alt="🏃" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      content += `最爱在 **${timeData.peak_hour.hour}:00** 买买买 <img src="/EffectEmoji/🏃_AgADUUoAAux4cEg.gif" alt="🏃" style="width: 13px; height: 13px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
     }
 
     if (timeData.peak_weekday?.weekday) {
       if (content) content += "，";
-      content += `**${timeData.peak_weekday.weekday}** 是我的快乐剁手日 <img src="/CuteEmoji/☺_AgAD40MAAn5wWEs.webp" alt="☺" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      content += `**${timeData.peak_weekday.weekday}** 是我的快乐剁手日 <img src="/CuteEmoji/☺_AgAD40MAAn5wWEs.webp" alt="☺" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
     }
 
     if (timeData.peak_period?.period) {
       if (content) content += "，";
-      content += `**${timeData.peak_period.period}** 花钱最多 <img src="/CuteEmoji/⚠_AgADQkcAAjlfYEs.webp" alt="⚠" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      content += `**${timeData.peak_period.period}** 花钱最多 <img src="/CuteEmoji/⚠_AgADQkcAAjlfYEs.webp" alt="⚠" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
     }
 
     if (timeData.peak_season?.season) {
@@ -546,7 +546,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
     let content = "";
 
     if (behaviorData.consumption_type) {
-      content += `我是个 **${behaviorData.consumption_type}** <img src="/CuteEmoji/💕_AgADGkYAAgKMWUs.webp" alt="💕" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      content += `我是个 **${behaviorData.consumption_type}** <img src="/CuteEmoji/💕_AgADGkYAAgKMWUs.webp" alt="💕" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
     }
 
     if (behaviorData.type_description) {
@@ -556,18 +556,18 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
 
     if (behaviorData.impulse_days > 0) {
       if (content) content += "。";
-      content += `偶尔会有购物小爆发 <img src="/EffectEmoji/💨_AgADZ1AAAiOKaEg.gif" alt="💨" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，有 **${behaviorData.impulse_days}** 天的冲动消费`;
+      content += `偶尔会有购物小爆发 <img src="/EffectEmoji/💨_AgADZ1AAAiOKaEg.gif" alt="💨" style="width: 13px; height: 13px; display: inline-block; margin-left: 3px; vertical-align: middle;" />，有 **${behaviorData.impulse_days}** 天的冲动消费`;
     }
 
     if (behaviorData.stability_score !== undefined) {
       if (content) content += "。";
       content += `消费稳定性 **${behaviorData.stability_score}分**`;
       if (behaviorData.stability_score >= 80) {
-        content += `，是个规律的小财迷 <img src="/CuteEmoji/🤩_AgADokIAAgbGYUs.webp" alt="🤩" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+        content += `，是个规律的小财迷 <img src="/CuteEmoji/🤩_AgADokIAAgbGYUs.webp" alt="🤩" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
       } else if (behaviorData.stability_score >= 60) {
-        content += `，消费比较有规律 <img src="/CuteEmoji/😌_AgADA0cAAgG0WUs.webp" alt="😌" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+        content += `，消费比较有规律 <img src="/CuteEmoji/😌_AgADA0cAAgG0WUs.webp" alt="😌" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
       } else {
-        content += `，消费比较随性 <img src="/CuteEmoji/😏_AgADyEMAAvK9WUs.webp" alt="😏" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+        content += `，消费比较随性 <img src="/CuteEmoji/😏_AgADyEMAAvK9WUs.webp" alt="😏" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
       }
     }
 
@@ -582,7 +582,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
     let content = "";
 
     if (growthData.peak_income_month?.month) {
-      content += `**${growthData.peak_income_month.month}月** 是我的发财月，收入创新高！<img src="/EffectEmoji/🚀_AgADFlUAAnmiaUg.gif" alt="🚀" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      content += `**${growthData.peak_income_month.month}月** 是我的发财月，收入创新高！<img src="/EffectEmoji/🚀_AgADFlUAAnmiaUg.gif" alt="🚀" style="width: 13px; height: 13px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
     }
 
     if (growthData.savings_trend) {
@@ -618,7 +618,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
     if (eventsData.top_expense_days && eventsData.top_expense_days.length > 0) {
       const topDay = eventsData.top_expense_days[0];
       if (content) content += "。";
-      content += `最大的破产日是 **${topDay.month}月${topDay.day}日**，花了 **${formatCurrency(topDay.amount)}** <img src="/EffectEmoji/😭_AgADvVYAAj2maUg.gif" alt="😭" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      content += `最大的破产日是 **${topDay.month}月${topDay.day}日**，花了 **${formatCurrency(topDay.amount)}** <img src="/EffectEmoji/😭_AgADvVYAAj2maUg.gif" alt="😭" style="width: 13px; height: 13px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
     }
 
     return content ? content + "～" : "特殊事件数据不足";
@@ -720,19 +720,19 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
     const mostUsedAccount = accountUsage[0] || { account: '', usage_count: 0, percentage: 0 };
     
     // 基础记账统计
-    let basicContent = `这一年和 **一木记账** 记录了 **${totalTransactions}** 条小账单 <img src="/CuteEmoji/📕_AgADbEEAArzPWUs.webp" alt="📕" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，用过 **${accountCount}** 个账户`;
+    let basicContent = `这一年和 **一木记账** 记录了 **${totalTransactions}** 条小账单 <img src="/CuteEmoji/📕_AgADbEEAArzPWUs.webp" alt="📕" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />，用过 **${accountCount}** 个账户`;
     if (mostUsedAccount.account) {
-      basicContent += `，最爱用 **${mostUsedAccount.account}**，占了 **${mostUsedAccount.percentage}%** <img src="/CuteEmoji/💛_AgADKEYAAm_jWUs.webp" alt="💛" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      basicContent += `，最爱用 **${mostUsedAccount.account}**，占了 **${mostUsedAccount.percentage}%** <img src="/CuteEmoji/💛_AgADKEYAAm_jWUs.webp" alt="💛" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
     }
 
     insights.push(basicContent);
 
     // 收支总结与收入来源（合并）
-    let financeContent = `收获了 **${formatCurrency(totalIncome)}** 小确幸，花掉 **${formatCurrency(totalExpense)}**，存下 **${formatCurrency(netSavings)}** 小金库 <img src="/CuteEmoji/👛_AgADlkgAAgjFWUs.webp" alt="👛" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，平均每天花费 **${formatCurrency(avgDailyExpense)}**`;
+    let financeContent = `收获了 **${formatCurrency(totalIncome)}** 小确幸，花掉 **${formatCurrency(totalExpense)}**，存下 **${formatCurrency(netSavings)}** 小金库 <img src="/CuteEmoji/👛_AgADlkgAAgjFWUs.webp" alt="👛" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />，平均每天花费 **${formatCurrency(avgDailyExpense)}**`;
 
     if (financialData.main_income_source && financialData.main_income_source.source) {
       const incomeSource = financialData.main_income_source;
-      financeContent += `。这一年大部分收入都来源于 **${incomeSource.source}**，贡献了 **${incomeSource.percentage}%** 的收入呢 <img src="/CuteEmoji/🌟_AgADyEUAAh_uWEs.webp" alt="🌟" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      financeContent += `。这一年大部分收入都来源于 **${incomeSource.source}**，贡献了 **${incomeSource.percentage}%** 的收入呢 <img src="/CuteEmoji/🌟_AgADyEUAAh_uWEs.webp" alt="🌟" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
     }
     insights.push(financeContent);
 
@@ -744,9 +744,9 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
       const day = expenseDate.getDate();
 
       if (maxExpenseData.note && maxExpenseData.note.trim()) {
-        extremeContent += `**${month}月${day}日** 为 **${maxExpenseData.note}** 花了 **${formatCurrency(maxExpenseData.amount)}**，是今年最大手笔呢 <img src="/CuteEmoji/💎_AgAD7kcAAnw6WEs.webp" alt="💎" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+        extremeContent += `**${month}月${day}日** 为 **${maxExpenseData.note}** 花了 **${formatCurrency(maxExpenseData.amount)}**，是今年最大手笔呢 <img src="/CuteEmoji/💎_AgAD7kcAAnw6WEs.webp" alt="💎" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
       } else {
-        extremeContent += `**${month}月${day}日** 在 **${maxExpenseData.category}** 花了 **${formatCurrency(maxExpenseData.amount)}**，是今年最大手笔呢 <img src="/CuteEmoji/💎_AgAD7kcAAnw6WEs.webp" alt="💎" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+        extremeContent += `**${month}月${day}日** 在 **${maxExpenseData.category}** 花了 **${formatCurrency(maxExpenseData.amount)}**，是今年最大手笔呢 <img src="/CuteEmoji/💎_AgAD7kcAAnw6WEs.webp" alt="💎" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
       }
     }
 
@@ -762,7 +762,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
       } else {
         extremeContent += ` ${maxIncomeData.category}**`;
       }
-      extremeContent += ` 的惊喜，是今年最大收入呢 <img src="/EffectEmoji/🎆_AgADPFgAAjqrYUg.gif" alt="🎆" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`;
+      extremeContent += ` 的惊喜，是今年最大收入呢 <img src="/EffectEmoji/🎆_AgADPFgAAjqrYUg.gif" alt="🎆" style="width: 13px; height: 13px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`;
     }
 
     if (extremeContent) {
@@ -772,19 +772,19 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
     // 地点消费统计 - 温馨化
     if (locationStats.length > 0) {
       const topLocation = locationStats[0];
-      insights.push(`**${topLocation.location}** 真是我的心头好呢 <img src="/CuteEmoji/💗_AgADd0EAAibUWUs.webp" alt="💗" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，在那里的消费占了全部的 **${topLocation.percentage}%**，每次去都忍不住买买买～ <img src="/EffectEmoji/🏃_AgADUUoAAux4cEg.gif" alt="🏃" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`);
+      insights.push(`**${topLocation.location}** 真是我的心头好呢 <img src="/CuteEmoji/💗_AgADd0EAAibUWUs.webp" alt="💗" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />，在那里的消费占了全部的 **${topLocation.percentage}%**，每次去都忍不住买买买～ <img src="/EffectEmoji/🏃_AgADUUoAAux4cEg.gif" alt="🏃" style="width: 13px; height: 13px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`);
     }
     
     // 分类支出统计 - 温馨化
     if (categoryExpenses.length > 0) {
       const topCategory = categoryExpenses[0];
       const categoryCount = categoryExpenses.length;
-      insights.push(`生活被我分成了 **${categoryCount}** 个小类别 <img src="/CuteEmoji/🎨_AgADs0sAApniWUs.webp" alt="🎨" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，其中 **${topCategory.category}** 最得我心，花费了 **${formatCurrency(topCategory.expense)}**，果然是我最舍得投资的地方呀 <img src="/EffectEmoji/☀_AgADk0kAAvQnaEg.gif" alt="☀" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`);
+      insights.push(`生活被我分成了 **${categoryCount}** 个小类别 <img src="/CuteEmoji/🎨_AgADs0sAApniWUs.webp" alt="🎨" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />，其中 **${topCategory.category}** 最得我心，花费了 **${formatCurrency(topCategory.expense)}**，果然是我最舍得投资的地方呀 <img src="/EffectEmoji/☀_AgADk0kAAvQnaEg.gif" alt="☀" style="width: 13px; height: 13px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`);
     }
     
     // 最常购买物品 - 温馨化
     if (mostFrequentItem.note && mostFrequentItem.count > 0) {
-      insights.push(`说到最爱，**${mostFrequentItem.note}** 绝对是我的心头宝 <img src="/CuteEmoji/👑_AgADHj8AAgQPWUs.webp" alt="👑" style="width: 14px; height: 14px; display: inline-block; margin-left: 4px; vertical-align: middle;" />，忍不住买了 **${mostFrequentItem.count}** 次，真是越买越开心呢 <img src="/EffectEmoji/💕_AgAD00sAAvGscEg.gif" alt="💕" style="width: 16px; height: 16px; display: inline-block; margin-left: 4px; vertical-align: middle;" />`);
+      insights.push(`说到最爱，**${mostFrequentItem.note}** 绝对是我的心头宝 <img src="/CuteEmoji/👑_AgADHj8AAgQPWUs.webp" alt="👑" style="width: 12px; height: 12px; display: inline-block; margin-left: 3px; vertical-align: middle;" />，忍不住买了 **${mostFrequentItem.count}** 次，真是越买越开心呢 <img src="/EffectEmoji/💕_AgAD00sAAvGscEg.gif" alt="💕" style="width: 13px; height: 13px; display: inline-block; margin-left: 3px; vertical-align: middle;" />`);
     }
     
     return insights;
@@ -1263,7 +1263,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
         initial={{ opacity: 0, x: 50, rotate: 8 }}
         animate={{ opacity: 1, x: 0, rotate: 5 }}
         transition={{ duration: 1, delay: 1.5, ease: "easeOut" }}
-        className="absolute top-20 right-16 z-50 w-80 h-[750px]"
+        className="absolute top-20 right-12 z-50 w-72 h-[680px]"
         style={{ willChange: 'transform, opacity' }}
       >
         {/* 移除左上角胶带装饰 */}
@@ -1288,8 +1288,8 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
           }}
         >
           
-          <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center"><img src="/PencilEmoji/💖_AgADlVUAAltsiEg.webp" alt="💝" className="w-7 h-7 mr-2" loading="lazy" decoding="async" fetchPriority="low" /> 今年的财务小结</h3>
-          <div className="space-y-1 max-h-[680px]">
+          <h3 className="text-base font-semibold text-gray-700 mb-3 flex items-center"><img src="/PencilEmoji/💖_AgADlVUAAltsiEg.webp" alt="💝" className="w-6 h-6 mr-2" loading="lazy" decoding="async" fetchPriority="low" /> 今年的财务小结</h3>
+          <div className="space-y-1.5 max-h-[680px]">
             {insights.map((_, index) => (
               <div key={index} className="relative">
                 {/* 手绘装饰元素 - 在外层避免被clip-path裁剪 */}
@@ -1333,7 +1333,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 3 + index * 0.2, ease: "easeOut" }}
-                  className="text-sm text-gray-600 leading-snug p-2.5 bg-gray-50 rounded-lg border border-gray-200 relative"
+                  className="text-xs text-gray-600 leading-snug p-2 bg-gray-50 rounded-lg border border-gray-200 relative"
                   style={{
                     clipPath: `polygon(
                       1% 10%, 5% 2%, 95% 5%, 99% 15%, 
@@ -1532,7 +1532,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
          </motion.div>
          
          <div 
-           className="bg-white p-8 relative border-2 border-gray-200 w-[1200px]"
+           className="bg-white pl-4 pr-8 py-4 relative border-2 border-gray-200 w-[1200px]"
            style={{
              clipPath: `polygon(
                2% 5%, 8% 0%, 92% 2%, 98% 8%, 
@@ -1542,10 +1542,10 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
            }}
          >
            
-            <h4 className="text-lg font-semibold text-gray-700 mb-6 text-center flex items-center justify-center"><img src="/PencilEmoji/🔥_AgADg0wAAi7eSUs.webp" alt="🔥" className="w-6 h-6 mr-2" loading="lazy" decoding="async" fetchPriority="low" /> {selectedYear}年度财务热力图</h4>
+            <h4 className="text-lg font-semibold text-gray-700 mb-3 text-center flex items-center justify-center"><img src="/PencilEmoji/🔥_AgADg0wAAi7eSUs.webp" alt="🔥" className="w-6 h-6 mr-2" loading="lazy" decoding="async" fetchPriority="low" /> {selectedYear}年度财务热力图</h4>
            
            {/* 月份标签 - 与热力图列对应 */}
-           <div className="flex mb-2" style={{ marginLeft: '24px' }}>
+           <div className="flex mb-2 justify-center">
              {/* 星期标签占位 */}
              <div className="mr-2" style={{ width: '30px' }}></div>
              {/* 月份标签网格 */}
@@ -1559,11 +1559,11 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
            </div>
            
            {/* 日级别热力图 */}
-          <div className="relative mb-8">
-             
-             <div className="flex ml-4">
+          <div className="relative mb-4">
+
+             <div className="flex justify-center">
                {/* 星期标签 */}
-               <div className="flex flex-col mr-2 text-xs text-gray-600" style={{ height: '180px', width: '30px', paddingTop: '12px', paddingBottom: '12px' }}>
+               <div className="flex flex-col mr-2 text-xs text-gray-600" style={{ height: '140px', width: '30px', paddingTop: '6px', paddingBottom: '6px' }}>
                  <div className="flex-1 flex items-center justify-center">日</div>
                  <div className="flex-1 flex items-center justify-center">一</div>
                  <div className="flex-1 flex items-center justify-center">二</div>
@@ -1574,14 +1574,14 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
                </div>
                
                {/* 热力图网格 */}
-               <div className="grid p-3" style={{ gridTemplateColumns: 'repeat(53, 1fr)', gridTemplateRows: 'repeat(7, 1fr)', height: '180px', width: '900px', gap: '3px' }}>
+               <div className="grid p-1" style={{ gridTemplateColumns: 'repeat(53, 1fr)', gridTemplateRows: 'repeat(7, 1fr)', height: '140px', width: '900px', gap: '2px' }}>
                   {gridCells.map((cell, index) => {
                     if ((cell as any).isEmpty) {
                      return (
                        <div 
                          key={`empty-${index}`}
                          className="rounded-[2px]"
-                         style={{ width: '16px', height: '16px', backgroundColor: '#e2e8f0' }}
+                         style={{ width: '16px', height: '14px', backgroundColor: '#e2e8f0' }}
                        />
                      );
                    }
@@ -1608,7 +1608,7 @@ const FinancialOverview: React.FC<FinancialOverviewProps> = ({ selectedYear, ava
                      className="rounded-[2px] relative overflow-hidden cursor-pointer"
                      style={{
                        width: '16px',
-                       height: '16px',
+                       height: '14px',
                        backgroundColor: totalAmount > 0 ? '#ffffff' : '#e2e8f0',
                        ...(totalAmount > 1000 && {
                             backgroundColor:
