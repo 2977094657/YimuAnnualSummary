@@ -49,15 +49,6 @@ YimuAnnualSummary/
     └── 账单_XXXXXXXXXXXX.xls
 ```
 
-## 💻 显示兼容性说明
-
-> ⚠️ **重要提醒：桌面端优先设计**
-> 本应用主要针对桌面端进行开发和优化，由于桌面应用的全屏高度通常比网页浏览器高，**在网页浏览器中可能出现显示不完全的现象**。
->
-> **推荐使用方式：**
-> - ✅ **桌面应用**：使用 `npm run tauri dev` 或构建的桌面应用获得最佳体验
-> - 🌐 **网页浏览器**：若必须使用网页显示，请按 **F11** 进入全屏模式以获得最佳体验
-
 ## 🚀 快速开始
 
 ### 1. 后端设置
@@ -85,16 +76,20 @@ cd yimu-frontend
 npm install
 
 # 开发模式启动
-npm run tauri dev
+npm run dev
 ```
+
+前端开发服务将在 `http://localhost:5173` 启动。
 
 ### 3. 构建生产版本
 
 ```bash
-# 构建桌面应用
+# 构建 Web 应用
 cd yimu-frontend
-npm run tauri build
+npm run build
 ```
+
+构建产物将输出到 `yimu-frontend/dist/` 目录。
 
 ## 🤝 贡献指南
 

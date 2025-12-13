@@ -6,13 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "tauri": "tauri"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
-    "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-opener": "^2",
     "@types/node": "^24.0.3",
     "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",
@@ -32,7 +29,6 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.10",
-    "@tauri-apps/cli": "^2.5.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
